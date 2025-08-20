@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Klassenbuch {{ klasse.name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .section { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Klassenbuch {{ klasse.name }} ({{ klasse.schuljahr }})</h1>
+    <p>Erstellt am: {{ current_date }}</p>
+
+    <div class="section">
+        <h2>Schüler</h2>
+        {% if schueler %}
+        <table>
+            <tr>
+                <th>Nachname</th>
+                <th>Vorname</th>
+                <th>Geburtsdatum</th>
+                <th>Geschlecht</th>
+            </tr>
+            {% for s in schueler %}
+            <tr>
+                <td>{{ s.nachname }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.geburtsdatum.strftime('%d.%m.%Y') if s.geburtsdatum else '-' }}</td>
+                <td>{{ {'m': 'Männlich', 'w': 'Weiblich', 'd': 'Divers'}.get(s.geschlecht, '-') }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>Keine Schüler vorhanden.</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>Unterrichtseinheiten und Anwesenheit</h2>
+        {% if unterrichtseinheiten %}
+        {% for ue in unterrichtseinheiten %}
+        <h3>{{ ue.thema }} ({{ ue.datum.strftime('%d.%m.%Y') }} - Stunden: {{ ue.stunden }})</h3>
+        <p><strong>Inhalte:</strong> {{ ue.inhalte if ue.inhalte else '-' }}</p>
+        <table>
+            <tr>
+                <th>Nachname</th>
+                <th>Vorname</th>
+                <th>Anwesend</th>
+                <th>Entschuldigt</th>
+            </tr>
+            {% for s in schueler %}
+            <tr>
+                <td>{{ s.nachname }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ 'Ja' if anwesenheits_data.get(ue.id, {}).get(s.id, {}).get('anwesend', False) else 'Nein' }}</td>
+                <td>{{ 'Ja' if anwesenheits_data.get(ue.id, {}).get(s.id, {}).get('entschuldigt', False) else 'Nein' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endfor %}
+        {% else %}
+        <p>Keine Unterrichtseinheiten vorhanden.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

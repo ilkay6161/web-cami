@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Aktuelles - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Aktuelles und Neuigkeiten{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Hauptinhalt: Blog Beiträge und Veranstaltungskalender nebeneinander -->
+    <div class="col-lg-8">
+        <!-- Blog Beiträge Sektion -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h2 class="card-title mb-0">Blog Beiträge</h2>
+                {% if session.get('admin') %}
+                <a href="{{ url_for('blog_new_post') }}" class="btn btn-success btn-sm">Neuen Beitrag erstellen</a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if blog_posts %}
+                    <div class="row">
+                        {% for post in blog_posts %}
+                        <div class="col-12 mb-4">
+                            <div class="d-flex border rounded overflow-hidden shadow-sm">
+                                {% if post.image %}
+                                <div style="flex: 0 0 150px;">
+                                    <img src="{{ url_for('static', filename='uploads/blog/' + post.image) }}" class="img-fluid h-100 w-100 object-fit-cover" style="object-fit: cover;" alt="{{ post.title }}">
+                                </div>
+                                {% endif %}
+                                <div class="p-3 d-flex flex-column justify-content-between" style="flex: 1;">
+                                    <div>
+                                        <h5>{{ post.title }}</h5>
+                                        <p>{{ post.content|striptags|truncate((post.content|length // 5) if post.content|length >= 15 else 15) }}</p>
+
+                                        <a href="{{ url_for('blog_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">Mehr lesen</a>
+                                        
+                                        {% if session.get('admin') %}
+                                        <form method="POST" action="{{ url_for('blog_delete_post', post_id=post.id) }}" class="d-inline ms-2">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Diesen Beitrag wirklich löschen?')">
+                                                <i class="fas fa-trash-alt me-1"></i>Löschen
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted mt-2">{{ post.date.strftime('%d.%m.%Y %H:%M') }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if session.get('admin') %}
+                        <!-- Beitrag bearbeiten für jeden Beitrag -->
+                        <div class="col-12 mb-4">
+                            <h2>Beitrag bearbeiten</h2>
+                            <form method="POST" action="{{ url_for('blog_edit_post', post_id=post.id) }}">
+                                <div class="mb-3">
+                                    <label class="form-label">Titel</label>
+                                    <input type="text" name="title" class="form-control" value="{{ post.title }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Inhalt</label>
+                                    <textarea name="content" class="form-control" rows="6" required>{{ post.content }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success">Speichern</button>
+                                <a href="{{ url_for('aktuelles') }}" class="btn btn-secondary">Abbrechen</a>
+                            </form>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('blog') }}" class="btn btn-outline-primary">Alle Beiträge anzeigen</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        Es sind noch keine Blogbeiträge vorhanden.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Veranstaltungskalender rechts neben den Blog-Beiträgen -->
+    <div class="col-lg-4">
+        <!-- Admin Bereich -->
+        {% if session.get('admin') %}
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0"><i class="fas fa-tools me-2"></i>Admin Bereich</h3>
+            </div>
+            <div class="card-body">
+                <p>Willkommen im Administrationsbereich. Von hier aus können Sie Ihre Website verwalten.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+                    </a>
+                    <a href="{{ url_for('blog_new_post') }}" class="btn btn-success">
+                        <i class="fas fa-plus-circle me-2"></i>Neuen Beitrag erstellen
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Neue Nachricht hinzufügen -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Neue Nachricht hinzufügen</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Nachricht:</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Veröffentlichen</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Veranstaltungskalender -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h3 class="card-title mb-0">Veranstaltungskalender</h3>
+            </div>
+            <div class="card-body">
+                {% if upcoming_events %}
+                    <div class="list-group">
+                        {% for event in upcoming_events %}
+                        <div class="list-group-item">
+                            <h5 class="mb-1">{{ event.title }}</h5>
+                            <small>
+                                <i class="fas fa-calendar-alt me-1 text-primary"></i>{{ event.event_date.strftime('%d.%m.%Y') }}
+                                {% if event.event_time %}
+                                <i class="fas fa-clock ms-3 me-1 text-success"></i>{{ event.event_time }}
+                                {% endif %}
+                            </small>
+                            {% if event.location %}
+                                <div><i class="fas fa-map-marker-alt me-1 text-warning"></i>{{ event.location }}</div>
+                            {% endif %}
+                            {% if event.description %}
+                                <div><small class="text-muted">{{ event.description }}</small></div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Keine bevorstehenden Veranstaltungen.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin-Login Modal -->
+<div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminLoginModalLabel">Admin Login</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('blog_admin_login') }}">
+                    <div class="mb-3">
+                        <label for="adminUsername" class="form-label">Benutzername</label>
+                        <input type="text" class="form-control" id="adminUsername" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="adminPassword" class="form-label">Passwort</label>
+                        <input type="password" class="form-control" id="adminPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Anmelden</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Unterricht erstellen{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Unterricht erstellen</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ url_for('unterricht_erstellen') }}" method="POST">
+                <div class="mb-3">
+                    <label for="datum" class="form-label">Datum</label>
+                    <input type="date" class="form-control" id="datum" name="datum" value="{{ current_date }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="klasse_id" class="form-label">Klasse</label>
+                    <select class="form-select" id="klasse_id" name="klasse_id" required>
+                        <option value="">Klasse auswählen</option>
+                        {% for klasse in klassen %}
+                        <option value="{{ klasse.id }}">{{ klasse.name }} ({{ klasse.schuljahr }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <hr>
+                <h4>Unterrichtseinheiten für diesen Tag</h4>
+                <table class="table table-bordered" id="lesson-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Stunde(n)</th>
+                            <th style="width: 30%;">Thema</th>
+                            <th>Inhalte / Bemerkung</th>
+                            <th style="width: 10%;">Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" class="form-control" name="stunden[]" placeholder="z.B. 1, 3-5" required></td>
+                            <td><input type="text" class="form-control" name="themen[]" required></td>
+                            <td><textarea class="form-control" name="inhalte[]"></textarea></td>
+                            <td><button type="button" class="btn btn-danger remove-row"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-success mb-3" id="add-row"><i class="fas fa-plus me-1"></i> Unterrichtseinheit hinzufügen</button>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addRowBtn = document.getElementById('add-row');
+    const lessonTableBody = document.querySelector('#lesson-table tbody');
+
+    // Function to attach remove event listeners to all remove buttons
+    function attachRemoveEvent() {
+        document.querySelectorAll('.remove-row').forEach(button => {
+            button.onclick = function() {
+                // Ensure at least one row remains
+                if (lessonTableBody.rows.length > 1) {
+                    this.closest('tr').remove();
+                } else {
+                    alert('Es muss mindestens eine Unterrichtseinheit vorhanden sein.');
+                }
+            };
+        });
+    }
+
+    // Add row functionality
+    addRowBtn.addEventListener('click', function() {
+        const newRow = lessonTableBody.insertRow();
+        newRow.innerHTML = `
+            <td><input type="text" class="form-control" name="stunden[]" placeholder="z.B. 1, 3-5" required></td>
+            <td><input type="text" class="form-control" name="themen[]" required></td>
+            <td><textarea class="form-control" name="inhalte[]"></textarea></td>
+            <td><button type="button" class="btn btn-danger remove-row"><i class="fas fa-trash"></i></button></td>
+        `;
+        attachRemoveEvent(); // Attach event listener to the new remove button
+    });
+
+    // Attach remove event listeners to initial rows
+    attachRemoveEvent();
+});
+</script>
+{% endblock %}

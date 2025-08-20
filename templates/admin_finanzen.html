@@ -1,0 +1,981 @@
+{% extends "base.html" %}
+
+{% block title %}SAP-ähnliche Finanzverwaltung{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<style>
+    :root {
+        --sap-blue: #0a6ed1;
+        --sap-gray: #f5f6f7;
+        --sap-dark-gray: #32363a;
+    }
+    .sap-card {
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        background-color: #fff;
+        margin-bottom: 1rem;
+    }
+    .sap-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .sap-card-header {
+        background-color: var(--sap-gray);
+        border-bottom: 1px solid #d1d5db;
+        padding: 12px 16px;
+        font-weight: 600;
+        color: var(--sap-dark-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .sap-card-body {
+        padding: 16px;
+    }
+    .sap-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .badge-income {
+        background-color: #e6f2e9;
+        color: #256f3a;
+    }
+    .badge-expense {
+        background-color: #faeaea;
+        color: #bb0a30;
+    }
+    .badge-note {
+        background-color: #e6f0f7;
+        color: #0a6ed1;
+    }
+    .sap-table th {
+        background-color: var(--sap-gray);
+        color: var(--sap-dark-gray);
+        font-weight: 600;
+    }
+    .sap-primary-btn {
+        background-color: var(--sap-blue);
+        border-color: var(--sap-blue);
+    }
+    .sap-primary-btn:hover {
+        background-color: #085caf;
+        border-color: #085caf;
+    }
+    .kpi-card {
+        border-left: 4px solid;
+        padding: 16px;
+        height: 100%;
+    }
+    .kpi-income {
+        border-left-color: #256f3a;
+    }
+    .kpi-expense {
+        border-left-color: #bb0a30;
+    }
+    .kpi-balance {
+        border-left-color: #0a6ed1;
+    }
+    .kpi-value {
+        font-size: 1.75rem;
+        font-weight: 600;
+    }
+    .select2-container {
+        width: 100% !important;
+    }
+    .accounting-circle {
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .accounting-circle-hauptbuch {
+        background-color: #e6f0f7;
+        color: #0a6ed1;
+        border: 1px solid #0a6ed1;
+    }
+    .accounting-circle-nebenbucher {
+        background-color: #f0e6f7;
+        color: #6f42c1;
+        border: 1px solid #6f42c1;
+    }
+    .accounting-circle-anlagen {
+        background-color: #e6f7ed;
+        color: #28a745;
+        border: 1px solid #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center py-3">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calculator me-2"></i>Finanzverwaltung
+        </h1>
+        <div class="btn-group">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newCostCenterModal">
+                <i class="fas fa-plus me-2"></i>Neue Kostenstelle
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProcessModal">
+                <i class="fas fa-plus me-2"></i>Neuer Vorgang
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="sap-card kpi-card kpi-income">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="text-muted mb-1">Einnahmen</h5>
+                        <div class="kpi-value text-success">{{ "%0.2f €"|format(total_income) }}</div>
+                        <small class="text-muted">Dieses Jahr</small>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-arrow-up text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sap-card kpi-card kpi-expense">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="text-muted mb-1">Ausgaben</h5>
+                        <div class="kpi-value text-danger">{{ "%0.2f €"|format(total_expense) }}</div>
+                        <small class="text-muted">Dieses Jahr</small>
+                    </div>
+                    <div class="bg-danger bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-arrow-down text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sap-card kpi-card kpi-balance">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="text-muted mb-1">Saldo</h5>
+                        <div class="kpi-value text-primary">{{ "%0.2f €"|format(total_balance) }}</div>
+                        <small class="text-muted">Aktueller Stand</small>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-balance-scale text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter und Transaktionsbereich -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="sap-card">
+                <div class="sap-card-header">
+                    <span><i class="fas fa-filter me-2"></i>Transaktionsfilter</span>
+                    <button class="btn btn-sm btn-link" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="collapse show" id="filterCollapse">
+                    <div class="sap-card-body">
+                        <form method="GET" class="mb-4">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label">Zeitraum</label>
+                                    <select class="form-select" name="time_range">
+                                        <option value="month">Dieser Monat</option>
+                                        <option value="quarter">Dieses Quartal</option>
+                                        <option value="year" selected>Dieses Jahr</option>
+                                        <option value="all">Alle</option>
+                                        <option value="custom">Benutzerdefiniert</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Kostenstelle</label>
+                                    <select class="form-select select2" name="cost_center_id">
+                                        <option value="">Alle</option>
+                                        {% for cc in cost_centers %}
+                                        <option value="{{ cc.id }}">{{ cc.code }} - {{ cc.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Vorgang</label>
+                                    <select class="form-select select2" name="process_id">
+                                        <option value="">Alle</option>
+                                        {% for p in processes %}
+                                        <option value="{{ p.id }}">{{ p.code }} - {{ p.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Typ</label>
+                                    <select class="form-select" name="type">
+                                        <option value="">Alle</option>
+                                        <option value="Einnahme">Einnahme</option>
+                                        <option value="Ausgabe">Ausgabe</option>
+                                        <option value="note">Notiz</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-2 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary flex-fill">
+                                        <i class="fas fa-filter me-2"></i>Filtern
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary flex-fill">
+                                        <i class="fas fa-undo me-2"></i>Zurücksetzen
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <hr class="my-4">
+                        <h5 class="mb-3"><i class="fas fa-plus-circle me-2"></i>Neue Transaktion</h5>
+                        <form method="POST" enctype="multipart/form-data" id="transactionForm" class="needs-validation" novalidate>
+                            <input type="hidden" name="aktion" value="hinzufuegen_transaktion">
+                            <div class="row g-3">
+                                <div class="col-md-2">
+                                    <label class="form-label">Datum*</label>
+                                    <input type="date" class="form-control" name="date" required value="{{ today_date }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Beschreibung*</label>
+                                    <input type="text" class="form-control" name="description" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Betrag (€)*</label>
+                                    <input type="number" step="0.01" class="form-control" name="amount" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Typ*</label>
+                                    <select class="form-select" name="type" id="transactionType" required>
+                                        <option value="Einnahme">Einnahme</option>
+                                        <option value="Ausgabe">Ausgabe</option>
+                                        <option value="note">Notiz</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Buchungskreis*</label>
+                                    <select class="form-select" name="accounting_circle" required>
+                                        <option value="Hauptbuch">Hauptbuch</option>
+                                        <option value="Nebenbucher">Nebenbücher</option>
+                                        <option value="Anlagen">Anlagen</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Kostenstelle*</label>
+                                    <select class="form-select select2" name="cost_center_id" id="costCenterSelect" required>
+                                        <option value="">Bitte auswählen</option>
+                                        {% for cc in cost_centers %}
+                                        <option value="{{ cc.id }}">{{ cc.code }} - {{ cc.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Vorgang*</label>
+                                    <select class="form-select select2" name="process_id" id="processSelect" required>
+                                        <option value="">Bitte auswählen</option>
+                                        {% for p in processes %}
+                                        <option value="{{ p.id }}">{{ p.code }} - {{ p.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Beleg</label>
+                                    <input type="file" class="form-control" name="document" accept=".pdf,.jpg,.png">
+                                    <small class="text-muted">Max. 5MB (PDF, JPG, PNG)</small>
+                                </div>
+                                <div class="col-12 mt-2 d-flex gap-2">
+                                    <button type="submit" class="btn btn-success flex-fill">
+                                        <i class="fas fa-save me-2"></i>Buchen
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary flex-fill">
+                                        <i class="fas fa-times me-2"></i>Abbrechen
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="sap-card h-100">
+                <div class="sap-card-header">
+                    <i class="fas fa-chart-line me-2"></i>Monatliche Entwicklung
+                </div>
+                <div class="sap-card-body">
+                    <canvas id="monthlyChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="sap-card h-100">
+                <div class="sap-card-header">
+                    <i class="fas fa-chart-pie me-2"></i>Kostenstellenverteilung
+                </div>
+                <div class="sap-card-body">
+                    <canvas id="costCenterChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaktionstabelle -->
+    <div class="row">
+        <div class="col-12">
+            <div class="sap-card">
+                <div class="sap-card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-list me-2"></i>Transaktionen</span>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-outline-primary" id="exportExcel">
+                            <i class="fas fa-file-excel me-1"></i>Excel
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="exportPDF">
+                            <i class="fas fa-file-pdf me-1"></i>PDF
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" id="exportXML">
+                            <i class="fas fa-file-code me-1"></i>XML
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#spendenModal">
+                            <i class="fas fa-file-pdf me-1"></i>Spendenbescheinigung
+                        </button>
+                    </div>
+                </div>
+                <div class="sap-card-body">
+                    <table id="transactionsTable" class="table sap-table w-100 align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Datum</th>
+                                <th>Beschreibung</th>
+                                <th>Betrag</th>
+                                <th>Typ</th>
+                                <th>Kostenstelle</th>
+                                <th>Vorgang</th>
+                                <th>Buchungskreis</th>
+                                <th>Status</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in transactions %}
+                            <tr>
+                                <td>{{ t.id }}</td>
+                                <td>{{ t.date.strftime('%d.%m.%Y') }}</td>
+                                <td>{{ t.description }}</td>
+                                <td class="fw-bold {{ 'text-success' if t.type == 'Einnahme' else 'text-danger' if t.type == 'Ausgabe' else 'text-muted' }}">
+                                    {{ "%0.2f €"|format(t.amount) if t.type != 'note' else '-' }}
+                                </td>
+                                <td>
+                                    <span class="sap-badge {{ 'badge-income' if t.type == 'Einnahme' else 'badge-expense' if t.type == 'Ausgabe' else 'badge-note' }}">
+                                        {{ t.type }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if t.cost_center %}
+                                    <span class="badge bg-light text-dark">
+                                        {{ t.cost_center.code }} - {{ t.cost_center.name }}
+                                    </span>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if t.process %}
+                                    <span class="badge bg-light text-dark">
+                                        {{ t.process.code }} - {{ t.process.name }}
+                                    </span>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="accounting-circle accounting-circle-{{ t.accounting_circle|lower }}">
+                                        {{ t.accounting_circle }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if t.document_filename %}
+                                    <span class="badge bg-success">Belegt</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Fehlend</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="openEditTransactionModal({{ t.id }})" title="Bearbeiten" aria-label="Bearbeiten">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="confirmDeleteTransaction({{ t.id }}, '{{ t.description }}')" title="Löschen" aria-label="Löschen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% if t.document_filename %}
+                                        <a href="{{ url_for('download_document', id=t.id) }}" class="btn btn-outline-secondary" title="Dokument herunterladen" aria-label="Dokument herunterladen">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="{{ url_for('generate_receipt', id=t.id) }}" class="btn btn-outline-success" title="Beleg erstellen" aria-label="Beleg erstellen">
+                                            <i class="fas fa-receipt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal für neue Kostenstelle -->
+<div class="modal fade" id="newCostCenterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Neue Kostenstelle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin_finanzen') }}" class="needs-validation" novalidate>
+                <input type="hidden" name="aktion" value="hinzufuegen_kostenstelle">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="costCenterCode">Kostenstellencode*</label>
+                        <input type="text" class="form-control" id="costCenterCode" name="code" required>
+                        <div class="invalid-feedback">Bitte geben Sie einen Kostenstellencode ein.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCostCenterId" class="form-label">Kostenstelle</label>
+                        <select class="form-select" id="editCostCenterId" name="cost_center_id">
+                            <option value="">Keine</option>
+                            {% for cc in all_cost_centers %}
+                            <option value="{{ cc.id }}">{{ cc.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCategory" class="form-label">Kategorie (Optional)</label>
+                        <input type="text" class="form-control" id="editCategory" name="category" list="categoriesList">
+                        <datalist id="categoriesList">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="costCenterName">Name*</label>
+                        <input type="text" class="form-control" id="costCenterName" name="name" required>
+                        <div class="invalid-feedback">Bitte geben Sie einen Namen ein.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="costCenterDescription">Beschreibung</label>
+                        <textarea class="form-control" id="costCenterDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="costCenterResponsible">Verantwortlicher</label>
+                        <input type="text" class="form-control" id="costCenterResponsible" name="responsible">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal für neuen Vorgang -->
+<div class="modal fade" id="newProcessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Neuer Vorgang</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin_finanzen') }}" class="needs-validation" novalidate>
+                <input type="hidden" name="aktion" value="hinzufuegen_vorgang">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="processCode">Vorgangscode*</label>
+                        <input type="text" class="form-control" id="processCode" name="code" required>
+                        <div class="invalid-feedback">Bitte geben Sie einen Vorgangscode ein.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="processName">Name*</label>
+                        <input type="text" class="form-control" id="processName" name="name" required>
+                        <div class="invalid-feedback">Bitte geben Sie einen Namen ein.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="processCostCenter">Kostenstelle*</label>
+                        <select class="form-select" id="processCostCenter" name="cost_center_id" required>
+                            <option value="">Bitte auswählen</option>
+                            {% for cc in cost_centers %}
+                            <option value="{{ cc.id }}">{{ cc.code }} - {{ cc.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Bitte wählen Sie eine Kostenstelle aus.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="processDescription">Beschreibung</label>
+                        <textarea class="form-control" id="processDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal für Spendenbescheinigung -->
+<div class="modal fade" id="spendenModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Spendenbescheinigung erstellen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <form method="POST" id="spendenForm" class="needs-validation" novalidate>
+                <input type="hidden" name="aktion" value="spendenbescheinigung">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Spender Name*</label>
+                            <input type="text" class="form-control" name="spender_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Spender Adresse*</label>
+                            <input type="text" class="form-control" name="spender_address" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Spender Steuernummer</label>
+                            <input type="text" class="form-control" name="spender_tax_number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Spendendatum*</label>
+                            <input type="date" class="form-control" name="spende_date" required value="{{ today_date }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Spendenbetrag (€)*</label>
+                            <input type="number" step="0.01" class="form-control" name="spende_amount" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Zahlungsmethode*</label>
+                            <select class="form-select" name="payment_method" required>
+                                <option value="Überweisung">Überweisung</option>
+                                <option value="Bar">Bar</option>
+                                <option value="Lastschrift">Lastschrift</option>
+                                <option value="Kreditkarte">Kreditkarte</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Verwendungszweck*</label>
+                            <input type="text" class="form-control" name="purpose" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Bemerkungen</label>
+                            <textarea class="form-control" name="remarks" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="legalNotice" required>
+                                <label class="form-check-label" for="legalNotice">
+                                    Ich bestätige, dass diese Spende gemäß den geltenden Steuervorschriften abzugsfähig ist.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary">Bescheinigung erstellen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal für Transaktion bearbeiten -->
+<div class="modal fade" id="editTransactionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Transaktion bearbeiten</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <form method="POST" id="editTransactionForm" class="needs-validation" novalidate enctype="multipart/form-data">
+                <input type="hidden" name="aktion" value="bearbeiten_transaktion">
+                <input type="hidden" name="transaction_id" id="editTransactionId">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label" for="editDate">Datum*</label>
+                            <input type="date" class="form-control" id="editDate" name="date" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="editDescription">Beschreibung*</label>
+                            <input type="text" class="form-control" id="editDescription" name="description" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" for="editAmount">Betrag (€)*</label>
+                            <input type="number" step="0.01" class="form-control" id="editAmount" name="amount" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" for="editType">Typ*</label>
+                            <select class="form-select" id="editType" name="type" required>
+                                <option value="Einnahme">Einnahme</option>
+                                <option value="Ausgabe">Ausgabe</option>
+                                <option value="note">Notiz</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="editCostCenter">Kostenstelle*</label>
+                            <select class="form-select select2" id="editCostCenter" name="cost_center_id" required>
+                                <option value="">Bitte auswählen</option>
+                                {% for cc in cost_centers %}
+                                <option value="{{ cc.id }}">{{ cc.code }} - {{ cc.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="editProcess">Vorgang*</label>
+                            <select class="form-select select2" id="editProcess" name="process_id" required>
+                                <option value="">Bitte auswählen</option>
+                                {% for p in processes %}
+                                <option value="{{ p.id }}">{{ p.code }} - {{ p.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="editAccountingCircle">Buchungskreis*</label>
+                            <select class="form-select" id="editAccountingCircle" name="accounting_circle" required>
+                                <option value="Hauptbuch">Hauptbuch</option>
+                                <option value="Nebenbucher">Nebenbücher</option>
+                                <option value="Anlagen">Anlagen</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editCategory" class="form-label">Kategorie (Optional)</label>
+                            <input type="text" class="form-control" id="editCategory" name="category" list="categoriesList">
+                            <datalist id="categoriesList">
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="editDocument">Beleg</label>
+                            <input type="file" class="form-control" id="editDocument" name="document" accept=".pdf,.jpg,.png">
+                            <small class="text-muted">Aktuelles Dokument: <span id="currentDocument">Keines</span></small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4 pt-2">
+                                <input class="form-check-input" type="checkbox" id="editIsApproved" name="is_approved">
+                                <label class="form-check-label" for="editIsApproved">Genehmigt</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-end">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Löschbestätigung -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Löschen bestätigen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <p>Möchten Sie wirklich diese Transaktion löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                <p class="fw-bold" id="deleteItemDescription"></p>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form method="POST" id="deleteForm" class="d-inline">
+                    <input type="hidden" name="aktion" value="loeschen_transaktion">
+                    <input type="hidden" name="transaction_id" id="deleteTransactionId">
+                    <button type="submit" class="btn btn-danger">Löschen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialisiere Select2
+    $('.select2').select2({
+        placeholder: "Auswählen...",
+        allowClear: true
+    });
+
+    // DataTable initialisieren
+    const table = $('#transactionsTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'excelHtml5',
+                text: '<i class="fas fa-file-excel me-1"></i> Excel',
+                className: 'btn btn-outline-primary btn-sm',
+                title: 'Finanztransaktionen',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                }
+            },
+            {
+                extend: 'pdfHtml5',
+                text: '<i class="fas fa-file-pdf me-1"></i> PDF',
+                className: 'btn btn-outline-secondary btn-sm',
+                title: 'Finanztransaktionen',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                },
+                customize: function(doc) {
+                    doc.content[1].table.widths = Array(doc.content[1].table.body[0].length + 1).join('*').split('');
+                }
+            }
+        ],
+        order: [[1, 'desc']],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/de-DE.json'
+        },
+        responsive: true,
+        pageLength: 25
+    });
+
+    // Export-Buttons
+    $('#exportExcel').on('click', function() {
+        table.button('.buttons-excel').trigger();
+    });
+    $('#exportPDF').on('click', function() {
+        table.button('.buttons-pdf').trigger();
+    });
+    $('#exportXML').on('click', function() {
+        $.ajax({
+            url: '/export/xml',
+            method: 'GET',
+            success: function(response) {
+                const blob = new Blob([response], {type: 'application/xml'});
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = 'finanztransaktionen.xml';
+                link.click();
+            },
+            error: function() {
+                alert('Fehler beim Exportieren der Daten als XML.');
+            }
+        });
+    });
+
+    // Typ "Notiz" deaktiviert Betrag
+    $('#transactionType, #editType').on('change', function() {
+        const isNote = $(this).val() === 'note';
+        const formId = $(this).closest('form').attr('id');
+        const amountField = $(`#${formId} input[name="amount"]`);
+        if (isNote) {
+            amountField.val('').prop('required', false).prop('disabled', true);
+        } else {
+            amountField.prop('required', true).prop('disabled', false);
+        }
+    });
+
+    // Charts laden
+    initCharts();
+
+    // Formularvalidierung
+    $('form.needs-validation').on('submit', function(event) {
+        if (!this.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        $(this).addClass('was-validated');
+    });
+
+    // Spendenformular
+    $('#spendenForm').on('submit', function(e) {
+        e.preventDefault();
+        if (this.checkValidity()) {
+            const formData = new FormData(this);
+            $.ajax({
+                url: '/generate/donation-receipt',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = response.download_url;
+                        $('#spendenModal').modal('hide');
+                        $('#spendenForm')[0].reset();
+                        $('#spendenForm').removeClass('was-validated');
+                    } else {
+                        alert('Fehler: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Fehler beim Erstellen der Spendenbescheinigung.');
+                }
+            });
+        }
+    });
+});
+
+function initCharts() {
+    // Monatliche Entwicklung
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ monthly_summary|map(attribute=0)|list|tojson|safe }},
+            datasets: [
+                {
+                    label: 'Einnahmen',
+                    data: {{ monthly_summary|map(attribute=1)|map(attribute='income')|list|tojson|safe }},
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Ausgaben',
+                    data: {{ monthly_summary|map(attribute=1)|map(attribute='expense')|list|tojson|safe }},
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Betrag (€)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Monat'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.raw.toFixed(2) + ' €';
+                        }
+                    }
+                },
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+
+    // Kostenstellenverteilung
+    const costCenterCtx = document.getElementById('costCenterChart').getContext('2d');
+    new Chart(costCenterCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|tojson|safe }},
+            datasets: [{
+                data: {{ category_data|tojson|safe }},
+                backgroundColor: [
+                    '#0a6ed1', '#6c757d', '#20c997', '#ffc107', '#fd7e14', '#dc3545',
+                    '#6610f2', '#6f42c1', '#e83e8c', '#17a2b8', '#28a745', '#343a40'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total ? Math.round((value / total) * 100) : 0;
+                            return `${label}: ${value.toFixed(2)} € (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function openEditTransactionModal(transactionId) {
+    fetch(`/api/transaction/${transactionId}`)
+        .then(response => response.json())
+        .then(data => {
+            $('#editTransactionId').val(data.id);
+            $('#editDate').val(data.date);
+            $('#editDescription').val(data.description);
+            $('#editAmount').val(data.amount);
+            $('#editType').val(data.type).trigger('change');
+            $('#editAccountingCircle').val(data.accounting_circle);
+            $('#editCostCenter').val(data.cost_center_id).trigger('change');
+            $('#editProcess').val(data.process_id).trigger('change');
+            $('#editCategory').val(data.category);
+            $('#editIsApproved').prop('checked', data.is_approved);
+            const docText = data.document_filename ? `<a href="/download_document/${data.id}" target="_blank">${data.document_filename}</a>` : 'Keines';
+            $('#currentDocument').html(docText);
+            new bootstrap.Modal(document.getElementById('editTransactionModal')).show();
+        })
+        .catch(error => {
+            console.error('Fehler:', error);
+            alert('Fehler beim Laden der Transaktionsdaten');
+        });
+}
+
+function confirmDeleteTransaction(id, description) {
+    $('#deleteTransactionId').val(id);
+    $('#deleteItemDescription').text(description);
+    new bootstrap.Modal(document.getElementById('deleteConfirmationModal')).show();
+}
+</script>
+{% endblock %}

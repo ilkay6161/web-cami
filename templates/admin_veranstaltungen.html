@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Veranstaltungen Verwaltung - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Veranstaltungen Verwaltung{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-calendar-alt me-2"></i>Veranstaltungen Verwaltung</h2>
+                <div>
+                    <a href="{{ url_for('admin_veranstaltung_neu') }}" class="btn btn-success me-2">
+                        <i class="fas fa-plus me-1"></i>Neue Veranstaltung
+                    </a>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Zurück zum Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Aktuelle und zukünftige Veranstaltungen -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>Aktuelle & Zukünftige Veranstaltungen 
+                        <span class="badge bg-light text-dark ms-2">{{ aktuelle_veranstaltungen|length }}</span>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if aktuelle_veranstaltungen %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Titel</th>
+                                    <th>Datum</th>
+                                    <th>Zeit</th>
+                                    <th>Ort</th>
+                                    <th>Wiederholung</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in aktuelle_veranstaltungen %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ event.title }}</strong>
+                                        {% if event.description %}
+                                        <br><small class="text-muted">{{ event.description[:50] }}{% if event.description|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ event.event_date.strftime('%d.%m.%Y') }}</td>
+                                    <td>{{ event.event_time or '-' }}</td>
+                                    <td>{{ event.location or '-' }}</td>
+                                    <td>
+                                        {% if event.is_recurring %}
+                                            <span class="badge bg-info">{{ event.recurrence_type }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Einmalig</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('admin_veranstaltung_bearbeiten', event_id=event.id) }}" 
+                                               class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('admin_veranstaltung_loeschen', event_id=event.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Veranstaltung wirklich löschen?')">
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <h5><i class="fas fa-calendar-plus me-2"></i>Keine aktuellen Veranstaltungen</h5>
+                        <p>Erstellen Sie Ihre erste Veranstaltung!</p>
+                        <a href="{{ url_for('admin_veranstaltung_neu') }}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>Veranstaltung erstellen
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Vergangene Veranstaltungen -->
+            {% if vergangene_veranstaltungen %}
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Vergangene Veranstaltungen 
+                        <span class="badge bg-light text-dark ms-2">{{ vergangene_veranstaltungen|length }}</span>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Titel</th>
+                                    <th>Datum</th>
+                                    <th>Zeit</th>
+                                    <th>Ort</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in vergangene_veranstaltungen %}
+                                <tr class="table-light">
+                                    <td>
+                                        <strong class="text-muted">{{ event.title }}</strong>
+                                        {% if event.description %}
+                                        <br><small class="text-muted">{{ event.description[:50] }}{% if event.description|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">{{ event.event_date.strftime('%d.%m.%Y') }}</td>
+                                    <td class="text-muted">{{ event.event_time or '-' }}</td>
+                                    <td class="text-muted">{{ event.location or '-' }}</td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('admin_veranstaltung_loeschen', event_id=event.id) }}" 
+                                              class="d-inline" onsubmit="return confirm('Veranstaltung wirklich löschen?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i> Löschen
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

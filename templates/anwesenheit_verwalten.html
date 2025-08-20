@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Anwesenheit verwalten - {{ unterrichtseinheit.thema }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Anwesenheit für {{ unterrichtseinheit.thema }} ({{ unterrichtseinheit.datum.strftime('%d.%m.%Y') }})</h1>
+    <a href="{{ url_for('klassenbuch_details', klasse_id=klasse.id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Zurück
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Anwesenheitsliste für Klasse {{ klasse.name }}</h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('anwesenheit_verwalten', unterricht_id=unterrichtseinheit.id) }}" method="POST">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nachname</th>
+                        <th>Vorname</th>
+                        <th>Anwesend</th>
+                        <th>Entschuldigt (bei Abwesenheit)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schueler in schueler_der_klasse %}
+                    <tr>
+                        <td>{{ schueler.nachname }}</td>
+                        <td>{{ schueler.name }}</td>
+                        <td>
+                            <input type="checkbox" id="anwesend_{{ schueler.id }}" name="anwesend_{{ schueler.id }}"
+                                   {% if anwesenheiten.get(schueler.id, {}).get('anwesend', True) %}checked{% endif %}
+                                   onchange="toggleEntschuldigt({{ schueler.id }})">
+                        </td>
+                        <td>
+                            <input type="checkbox" id="entschuldigt_{{ schueler.id }}" name="entschuldigt_{{ schueler.id }}"
+                                   {% if anwesenheiten.get(schueler.id, {}).get('entschuldigt', False) %}checked{% endif %}
+                                   {% if anwesenheiten.get(schueler.id, {}).get('anwesend', True) %}disabled{% endif %}>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-1"></i> Anwesenheit speichern
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleEntschuldigt(schuelerId) {
+    var anwesend = document.getElementById('anwesend_' + schuelerId);
+    var entschuldigt = document.getElementById('entschuldigt_' + schuelerId);
+    entschuldigt.disabled = anwesend.checked;
+    if (anwesend.checked) {
+        entschuldigt.checked = false;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagramm</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="myChart" width="400" height="200"></canvas>
+    
+    <script>
+        // Daten aus Flask/Backend an das JavaScript übergeben
+        var labels = {{ labels | tojson }};
+        var werte = {{ werte | tojson }};
+        
+        // Überprüfe, ob Daten existieren
+        console.log("Labels: ", labels);
+        console.log("Werte: ", werte);
+
+        // Chart.js Diagramm erstellen
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',  // Oder 'line' für ein Liniendiagramm
+            data: {
+                labels: labels,  // X-Achse
+                datasets: [{
+                    label: 'Werte aus der DB',
+                    data: werte,  // Y-Achse
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    </script>
+</body>
+</html>
+

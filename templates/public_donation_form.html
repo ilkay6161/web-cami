@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Spendenformular{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Spenden an DITIB Salzgitter Bad e.V.</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="amount" class="form-label">Betrag (€)</label>
+            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Nachricht/Beschreibung (Optional)</label>
+            <input type="text" class="form-control" id="description" name="description">
+        </div>
+        <div class="mb-3">
+            <label for="cost_center_id" class="form-label">Für welchen Bereich möchten Sie spenden? (Optional)</label>
+            <select class="form-select" id="cost_center_id" name="cost_center_id">
+                <option value="">Keine spezielle Kostenstelle</option>
+                {% for cc in cost_centers %}
+                <option value="{{ cc.id }}">{{ cc.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="process_id" class="form-label">Für welchen Vorgang? (Optional)</label>
+            <select class="form-select" id="process_id" name="process_id">
+                <option value="">Kein spezieller Vorgang</option>
+                </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Jetzt spenden</button>
+    </form>
+</div>
+<script>
+    // Add JavaScript for dynamic process loading similar to admin forms
+    document.addEventListener('DOMContentLoaded', function() {
+        const costCenterSelect = document.getElementById('cost_center_id');
+        const processSelect = document.getElementById('process_id');
+
+        costCenterSelect.addEventListener('change', function() {
+            const costCenterId = this.value;
+            while (processSelect.options.length > 1) {
+                processSelect.remove(1);
+            }
+            if (costCenterId) {
+                fetch(`/admin/cost_centers/${costCenterId}/processes.json`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.processes.forEach(process => {
+                            const option = new Option(process.name, process.id);
+                            processSelect.add(option);
+                        });
+                    });
+            }
+        });
+    });
+</script>
+{% endblock %}

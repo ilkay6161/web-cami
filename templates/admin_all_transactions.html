@@ -1,0 +1,581 @@
+{% extends "base.html" %}
+
+{% block title %}SAP-ähnliche Finanzverwaltung{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<style>
+    :root {
+        --sap-blue: #0a6ed1;
+        --sap-gray: #f5f6f7;
+        --sap-dark-gray: #32363a;
+    }
+
+    .sap-card {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        background-color: #fff;
+        margin-bottom: 1.5rem;
+    }
+    .sap-card:hover {
+        box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    }
+    .sap-card-header {
+        background-color: #fff;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        color: var(--sap-dark-gray);
+    }
+    .sap-card-body {
+        padding: 1.5rem;
+    }
+    .sap-btn-primary {
+        background-color: var(--sap-blue);
+        border-color: var(--sap-blue);
+    }
+    .sap-btn-primary:hover {
+        background-color: #085dae;
+        border-color: #085dae;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+        background-color: var(--sap-blue) !important;
+        border-color: var(--sap-blue) !important;
+        color: white !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        color: var(--sap-blue) !important;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid #ced4da;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+    }
+    .dataTables_wrapper .dataTables_length select {
+        border: 1px solid #ced4da;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: var(--sap-gray);
+    }
+    .table-hover tbody tr:hover {
+        background-color: #e2e6ea;
+    }
+    .badge-table { display: inline-block; width: 80px; text-align: center; }
+
+    /* Custom styling for status badges */
+    .badge-success { background-color: #28a745; color: white; }
+    .badge-danger { background-color: #dc3545; color: white; }
+    .badge-secondary { background-color: #6c757d; color: white; }
+    .badge-info { background-color: #17a2b8; color: white; }
+
+    /* Chart container styling */
+    .chart-container {
+        position: relative;
+        height: 300px; /* Fixed height for charts */
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+    <div class="row">
+        <div class="col-12 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-file-invoice-dollar me-2"></i>Finanzverwaltung</h2>
+                <div class="d-flex">
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Zurück zum Dashboard
+                    </a>
+                    <a href="{{ url_for('admin_cost_centers') }}" class="btn btn-info me-2">
+                        <i class="fas fa-building me-2"></i>Kostenstellen verwalten
+                    </a>
+                    <button type="button" class="btn sap-btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                        <i class="fas fa-plus-circle me-2"></i>Neue Transaktion
+                    </button>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="row">
+                <div class="col-12">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="sap-card">
+                        <div class="sap-card-header">Gesamte Einnahmen</div>
+                        <div class="sap-card-body">
+                            <h4 class="card-title text-success">{{ "%.2f"|format(total_income) }} €</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="sap-card">
+                        <div class="sap-card-header">Gesamte Ausgaben</div>
+                        <div class="sap-card-body">
+                            <h4 class="card-title text-danger">{{ "%.2f"|format(total_expense) }} €</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="sap-card">
+                        <div class="sap-card-header">Saldo</div>
+                        <div class="sap-card-body">
+                            <h4 class="card-title {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">{{ "%.2f"|format(balance) }} €</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="sap-card">
+                        <div class="sap-card-header">Einnahmen vs. Ausgaben (Monatlich)</div>
+                        <div class="sap-card-body">
+                            <div class="chart-container">
+                                <canvas id="monthlyFinanceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="sap-card">
+                        <div class="sap-card-header">Einnahmen/Ausgaben Verteilung</div>
+                        <div class="sap-card-body">
+                            <div class="chart-container">
+                                <canvas id="typeDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="sap-card mb-4">
+                <div class="sap-card-header d-flex justify-content-between align-items-center">
+                    Alle Transaktionen
+                    <div class="d-flex">
+                        <a href="{{ url_for('admin_all_transaction') }}" class="btn btn-sm btn-outline-secondary me-2">
+                            <i class="fas fa-eye me-1"></i> Alle anzeigen
+                        </a>
+                        <a href="{{ url_for('download_excel') }}" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-excel me-1"></i> Excel Export
+                        </a>
+                    </div>
+                </div>
+                <div class="sap-card-body">
+                    <div class="table-responsive">
+                        <table id="transactionsTable" class="table table-striped table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Datum</th>
+                                    <th>Beschreibung</th>
+                                    <th>Betrag (€)</th>
+                                    <th>Typ</th>
+                                    <th>Buchungskreis</th>
+                                    <th>Kostenstelle</th>
+                                    <th>Vorgang</th>
+                                    <th>Dokument</th>
+                                    <th>Genehmigt</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.id }}</td>
+                                    <td>{{ moment(transaction.date).format('DD.MM.YYYY') }}</td>
+                                    <td>{{ transaction.description }}</td>
+                                    <td>{{ "%.2f"|format(transaction.amount) }}</td>
+                                    <td><span class="badge rounded-pill {% if transaction.type == 'Einnahme' %}bg-success{% else %}bg-danger{% endif %} badge-table">{{ transaction.type }}</span></td>
+                                    <td>{{ transaction.accounting_circle if transaction.accounting_circle else 'N/A' }}</td>
+                                    <td>{{ transaction.cost_center.name if transaction.cost_center else 'N/A' }}</td>
+                                    <td>{{ transaction.process.name if transaction.process else 'N/A' }}</td>
+                                    <td>
+                                        {% if transaction.document_filename %}
+                                            <a href="{{ url_for('static', filename='Uploads/' + transaction.document_filename) }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-file-alt"></i> Anzeigen
+                                            </a>
+                                        {% else %}
+                                            Keines
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill {% if transaction.is_approved %}bg-success{% else %}bg-secondary{% endif %} badge-table">
+                                            {{ 'Ja' if transaction.is_approved else 'Nein' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning me-1" onclick="editTransaction({{ transaction.id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="confirmDeleteTransaction({{ transaction.id }}, '{{ transaction.description | replace("'", "\\'") }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% if transaction.type == 'Einnahme' %}
+                                        <button class="btn btn-sm btn-info mt-1" id="generateSpendenPDF" onclick="window.location.href='{{ url_for('spendenformular', transaction_id=transaction.id) }}'">
+                                            <i class="fas fa-file-pdf me-1"></i>Spenden-Quittung
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTransactionModalLabel">Neue Transaktion hinzufügen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTransactionForm" method="POST" action="{{ url_for('admin_finanzen') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="aktion" value="add_transaction">
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Datum</label>
+                        <input type="date" class="form-control" id="date" name="date" required value="{{ moment().format('YYYY-MM-DD') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Beschreibung</label>
+                        <input type="text" class="form-control" id="description" name="description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Betrag (€)</label>
+                        <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Typ</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="Einnahme">Einnahme</option>
+                            <option value="Ausgabe">Ausgabe</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="accountingCircle" class="form-label">Buchungskreis</label>
+                        <input type="text" class="form-control" id="accountingCircle" name="accounting_circle" value="Hauptbuch">
+                    </div>
+                    <div class="mb-3">
+                        <label for="addCostCenter" class="form-label">Kostenstelle</label>
+                        <select class="form-select" id="addCostCenter" name="cost_center_id">
+                            <option value="">Keine</option>
+                            {% for cc in cost_centers %}
+                            <option value="{{ cc.id }}">{{ cc.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addProcess" class="form-label">Vorgang</label>
+                        <select class="form-select" id="addProcess" name="process_id">
+                            <option value="">Keiner</option>
+                            {# Processes will be dynamically loaded here based on selected Cost Center #}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document" class="form-label">Dokument (Optional)</label>
+                        <input type="file" class="form-control" id="document" name="document" accept=".pdf,.doc,.docx,.jpg,.png">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="isApproved" name="is_approved">
+                        <label class="form-check-label" for="isApproved">Genehmigt</label>
+                    </div>
+                    <button type="submit" class="btn sap-btn-primary">Hinzufügen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'transaction_edit.html' %}
+
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmationModalLabel">Transaktion löschen bestätigen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Sind Sie sicher, dass Sie die Transaktion "<strong id="deleteItemDescription"></strong>" endgültig löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form id="deleteTransactionForm" method="POST" action="{{ url_for('admin_finanzen') }}">
+                    <input type="hidden" name="aktion" value="delete_transaction">
+                    <input type="hidden" name="transaction_id" id="deleteTransactionId">
+                    <button type="submit" class="btn btn-danger">Löschen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#transactionsTable').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/de-DE.json'
+            },
+            order: [[0, 'desc']], // Sort by ID descending
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            columnDefs: [
+                { targets: -1, orderable: false } // Disable sorting for the last column (actions)
+            ]
+        });
+
+        // Initialize Select2 for dropdowns
+        $('#addCostCenter').select2({
+            placeholder: "Kostenstelle auswählen",
+            allowClear: true
+        });
+        $('#addProcess').select2({
+            placeholder: "Vorgang auswählen",
+            allowClear: true
+        });
+        $('#editCostCenterId').select2({ // Updated ID here
+            placeholder: "Kostenstelle auswählen",
+            allowClear: true
+        });
+        $('#editProcessId').select2({ // Updated ID here
+            placeholder: "Vorgang auswählen",
+            allowClear: true
+        });
+
+
+        // Dynamic loading of processes based on selected cost center for ADD transaction
+        $('#addCostCenter').on('change', function() {
+            var costCenterId = $(this).val();
+            updateProcessOptions(costCenterId, $('#addProcess'));
+        });
+
+        // Dynamic loading of processes based on selected cost center for EDIT transaction
+        $('#editCostCenterId').on('change', function() { // Updated ID here
+            var costCenterId = $(this).val();
+            updateProcessOptions(costCenterId, $('#editProcessId')); // Updated ID here
+        });
+
+        // Initial update for edit form in case a cost center is pre-selected on page load (though unlikely with modals)
+        // This will be handled by the editTransaction function itself
+    });
+
+    // Function to update process dropdown options
+    function updateProcessOptions(costCenterId, processSelectElement, selectedProcessId = null) {
+        processSelectElement.empty().append('<option value="">Keiner</option>'); // Add "Keiner" option
+
+        if (costCenterId) {
+            fetch(`/get_processes_by_cost_center/${costCenterId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(function(process) {
+                        var newOption = new Option(process.name, process.id, false, false);
+                        processSelectElement.append(newOption);
+                    });
+                    if (selectedProcessId) {
+                        processSelectElement.val(selectedProcessId).trigger('change.select2');
+                    }
+                    processSelectElement.trigger('change.select2'); // Trigger Select2 update
+                })
+                .catch(error => console.error('Error fetching processes:', error));
+        } else {
+            processSelectElement.trigger('change.select2'); // Trigger Select2 update even if no cost center
+        }
+    }
+
+
+    function editTransaction(id) {
+        fetch(`/get_transaction_details/${id}`)
+        .then(res => {
+            if (!res.ok) {
+                if (res.status === 401) {
+                    alert('Nicht autorisiert. Bitte melden Sie sich an.');
+                    window.location.href = '{{ url_for('blog_admin_login') }}';
+                }
+                throw new Error('Netzwerkantwort war nicht ok.');
+            }
+            return res.json();
+        })
+        .then(data => {
+            const t = data; // data directly contains transaction object
+            $('#editTransactionId').val(t.id);
+            $('#editDate').val(t.date);
+            $('#editDescription').val(t.description);
+            $('#editAmount').val(t.amount);
+            $('#editType').val(t.type).trigger('change');
+
+            $('#editAccountingCircle').val(t.accounting_circle || 'Hauptbuch');
+            $('#editIsApproved').prop('checked', t.is_approved || false);
+            $('#currentDocument').text(t.document_filename || 'Keines');
+
+            // Kostenstelle: Set value and then trigger change for Select2
+            $('#editCostCenterId').val(t.cost_center_id).trigger('change.select2');
+
+            // Vorgang basierend auf Kostenstelle:
+            // First, load processes for the selected cost center, then set the process_id
+            if (t.cost_center_id) {
+                updateProcessOptions(t.cost_center_id, $('#editProcessId'), t.process_id);
+            } else {
+                // If no cost center, clear process dropdown
+                $('#editProcessId').empty().append('<option value="">Keiner</option>').trigger('change.select2');
+            }
+
+            new bootstrap.Modal(document.getElementById('editTransactionModal')).show();
+        })
+        .catch(error => {
+            console.error('Fehler:', error);
+            alert('Fehler beim Laden der Transaktion.');
+        });
+    }
+
+    function confirmDeleteTransaction(id, description) {
+        $('#deleteTransactionId').val(id);
+        $('#deleteItemDescription').text(description);
+        new bootstrap.Modal(document.getElementById('deleteConfirmationModal')).show();
+    }
+
+    // Chart.js for visualizations
+    const monthlySummaryData = {{ monthly_summary | safe }};
+    const months = Object.keys(monthlySummaryData).sort();
+    const incomes = months.map(month => monthlySummaryData[month].total_income);
+    const expenses = months.map(month => monthlySummaryData[month].total_expense);
+
+    const ctxMonthly = document.getElementById('monthlyFinanceChart').getContext('2d');
+    new Chart(ctxMonthly, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Einnahmen',
+                data: incomes,
+                backgroundColor: 'rgba(40, 167, 69, 0.6)', // success green
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Ausgaben',
+                data: expenses,
+                backgroundColor: 'rgba(220, 53, 69, 0.6)', // danger red
+                borderColor: 'rgba(220, 53, 69, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Betrag (€)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Monat'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.raw.toFixed(2) + ' €';
+                        }
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                title: {
+                    display: false,
+                    text: 'Einnahmen vs. Ausgaben (Monatlich)'
+                }
+            }
+        }
+    });
+
+    const incomeCount = {{ transactions | selectattr('type', 'equalto', 'Einnahme') | list | length }};
+    const expenseCount = {{ transactions | selectattr('type', 'equalto', 'Ausgabe') | list | length }};
+
+    const ctxDistribution = document.getElementById('typeDistributionChart').getContext('2d');
+    new Chart(ctxDistribution, {
+        type: 'pie',
+        data: {
+            labels: ['Einnahmen', 'Ausgaben'],
+            datasets: [{
+                data: [incomeCount, expenseCount],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)', // success green
+                    'rgba(220, 53, 69, 0.8)'  // danger red
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += context.raw + ' Transaktionen';
+                            return label;
+                        }
+                    }
+                },
+                legend: {
+                    position: 'right',
+                },
+                title: {
+                    display: false,
+                    text: 'Einnahmen/Ausgaben Verteilung'
+                }
+            }
+        }
+    });
+
+</script>
+{% endblock %}

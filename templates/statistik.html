@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistik - Ahde Vefa</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h2>Statistik der Geburten und Todesfälle pro Jahr</h2>
+
+<canvas id="myChart" width="400" height="200"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'bar',  // Typ des Diagramms: Balkendiagramm
+        data: {
+            labels: {{ jahre|tojson }},  // Jahreszahlen als X-Achse
+            datasets: [{
+                label: 'Geburten',
+                data: {{ geburten|tojson }},  // Anzahl der Geburten pro Jahr
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',  // Farbe für die Balken
+                borderColor: 'rgba(75, 192, 192, 1)',  // Randfarbe für die Balken
+                borderWidth: 1
+            }, {
+                label: 'Todesfälle',
+                data: {{ tode|tojson }},  // Anzahl der Todesfälle pro Jahr
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',  // Farbe für die Balken
+                borderColor: 'rgba(255, 99, 132, 1)',  // Randfarbe für die Balken
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

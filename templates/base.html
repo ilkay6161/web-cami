@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="de" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}DITIB Salzgitter Bad{% endblock %}</title>
+
+    {{ moment.include_moment() }}
+    {{ moment.locale('de') }}  <meta name="description" content="Offizielle Website der DITIB Gemeinde Salzgitter Bad. Informationen über Veranstaltungen, Gottesdienste, Kontakt und mehr." />
+    <meta name="keywords" content="DITIB, Salzgitter, Moschee, Islam, Gemeinde, Veranstaltungen, Kontakt" />
+    <meta name="author" content="DITIB Salzgitter Bad" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ request.url }}" />
+    <meta property="og:title" content="{{ title|default('DITIB Salzgitter Bad') }}" />
+    <meta property="og:description" content="Offizielle Website der DITIB Gemeinde Salzgitter Bad." />
+    <meta property="og:image" content="https://example.com/images/ditib_logo.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="{{ request.url }}" />
+    <meta name="twitter:title" content="{{ title|default('DITIB Salzgitter Bad') }}" />
+    <meta name="twitter:description" content="Offizielle Website der DITIB Gemeinde Salzgitter Bad." />
+    <meta name="twitter:image" content="https://example.com/images/ditib_logo.png" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+	
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+</body>
+</html>
+    <style>
+        /* CSS for smooth header transitions */
+        .subpage-header {
+            transition: opacity 0.5s ease-in-out; /* Smooth fade for subpage header */
+        }
+        .mosque-header { /* Assuming you have a .mosque-header for homepage, though not directly used in index.html for the main hero */
+             transition: opacity 0.5s ease-in-out;
+        }
+
+        /* Common transition for card elements (optional but good for consistency) */
+        .card {
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Specific styles for the custom modal for Imsakiye PDF */
+        .modal-content-custom {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            font-family: 'Open Sans', sans-serif;
+            position: relative; /* Needed for transform */
+        }
+
+        .modal-content-custom h3 {
+            color: #003366; /* DITIB Blue */
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .modal-content-custom label {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .modal-content-custom input[type="number"],
+        .modal-content-custom select {
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Ensures padding doesn't increase width */
+        }
+
+        .modal-content-custom .btn-container {
+            margin-top: 25px;
+            display: flex;
+            justify-content: flex-end; /* Align buttons to the right */
+            gap: 10px; /* Space between buttons */
+        }
+
+        .modal-content-custom .btn-cancel,
+        .modal-content-custom .btn-generate {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .modal-content-custom .btn-cancel {
+            background-color: #ccc;
+            color: #333;
+        }
+
+        .modal-content-custom .btn-cancel:hover {
+            background-color: #bbb;
+            transform: translateY(-1px);
+        }
+
+        .modal-content-custom .btn-generate {
+            background-color: #003366; /* DITIB Blue */
+            color: #fff;
+        }
+
+        .modal-content-custom .btn-generate:hover {
+            background-color: #004488;
+            transform: translateY(-1px);
+        }
+
+        /* Gebetszeiten Table Highlight */
+        .prayer-times-table tr.next-prayer {
+            background-color: #e0f2f7; /* Light blue background for the next prayer */
+            font-weight: bold;
+            transition: background-color 0.5s ease-in-out; /* Smooth transition for background */
+        }
+        .prayer-times-table tr {
+            transition: background-color 0.5s ease-in-out; /* Ensure other rows also transition */
+        }
+
+        /* News Card Hover Effect */
+        .news-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .news-card .card-img-top {
+            width: 100%;
+            height: 200px; /* Fixed height for consistent image size */
+            object-fit: cover; /* Ensures image covers the area without distortion */
+        }
+
+        .news-card .card-body {
+            padding: 20px;
+        }
+
+        .news-card .card-title {
+            color: #003366;
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+        }
+
+        .news-card .card-text {
+            color: #555;
+            line-height: 1.6;
+        }
+        .news-card .btn-primary {
+            background-color: #003366;
+            border-color: #003366;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .news-card .btn-primary:hover {
+            background-color: #004488;
+            border-color: #004488;
+        }
+
+        /* Donation Button specific pulse (already defined in index.html) */
+        .animate__pulse.animate__infinite {
+            animation-duration: 2s; /* Adjust speed if needed */
+            animation-iteration-count: infinite;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+		<a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+			<img src="{{ url_for('static', filename='logo.png') }}" alt="DITIB Logo" height="40" class="me-2">
+			DITIB Salzgitter Bad
+		</a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('index') %}active{% endif %}" href="{{ url_for('index') }}">Startseite</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('gemeinde') %}active{% endif %}" href="{{ url_for('gemeinde') }}">Unsere Gemeinde</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('blog') %}active{% endif %}" href="{{ url_for('blog') }}">Aktuelles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('galarie') %}active{% endif %}" href="{{ url_for('galarie') }}">Galerie</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('islam') %}active{% endif %}" href="{{ url_for('islam') }}">Islam</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('kontakt') %}active{% endif %}" href="{{ url_for('kontakt') }}">Kontakt</a>
+                    </li>
+
+                    {% if session.get('admin') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-shield"></i> Admin
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('blog_new_post') }}">
+                                    <i class="fas fa-edit"></i> Neuer Blog-Eintrag
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_galerie') }}">
+                                    <i class="fas fa-images"></i> Galerie verwalten
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_ahde_vefa') }}">
+                                    <i class="fas fa-users"></i> Ahde Vefa verwalten
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('blog_admin_logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <header class="subpage-header text-center bg-light py-4 shadow-sm {% if request.path == url_for('index') %}d-none{% endif %}">
+        <div class="container">
+            <h1>{% block subpage_header_title %}DITIB Salzgitter Bad{% endblock %}</h1>
+        </div>
+    </header>
+
+    <main class="container my-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mosque-footer text-center">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <h5>DITIB Salzgitter Bad</h5>
+                <p>Braunschweigerstr. 65A<br>38259 Salzgitter Bad</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h5>Kontakt</h5>
+                <p>Telefon: +49 123 456789<br>
+                   E-Mail: <a href="mailto:info@ditib-salzgitter.de">info@ditib-salzgitter.de</a></p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h5>Links</h5>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('impressum') }}">Impressum</a></li>
+                    <li><a href="{{ url_for('datenschutz') }}">Datenschutzrichtlinie</a></li>
+                    <li><button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#adminLoginModal">
+                        <i class="fas fa-user-shield"></i> Admin Login
+                    </button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="mt-3">
+            <p class="text-muted">&copy; {{ today.year }} DITIB Salzgitter Bad. Alle Rechte vorbehalten.</p>
+        </div>
+    </div>
+</footer>
+
+<div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('blog_admin_login') }}">
+        <div class="modal-header">
+          <h5 class="modal-title" id="adminLoginModalLabel">Admin Login</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="adminUsername" class="form-label">Benutzername</label>
+            <input type="text" class="form-control" id="adminUsername" name="username" required>
+          </div>
+          <div class="mb-3">
+            <label for="adminPassword" class="form-label">Passwort</label>
+            <input type="password" class="form-control" id="adminPassword" name="password" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Anmelden</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Header-Sichtbarkeit mit sanftem Übergang
+            function updateHeaderVisibility() {
+                const isHomePage = window.location.pathname === '/' || window.location.pathname === '/index';
+                const subpageHeader = document.querySelector('.subpage-header');
+                // Assuming 'mosque-header' is the class for the homepage specific header/hero area,
+                // which is implicitly shown by the absence of subpage-header
+                const homepageHeader = document.querySelector('#headerHero'); // Targeting the specific hero div from index.html
+
+                if (subpageHeader && homepageHeader) {
+                    if (isHomePage) {
+                        subpageHeader.style.opacity = '0';
+                        subpageHeader.classList.add('d-none');
+                        homepageHeader.classList.remove('d-none'); // Ensure hero is visible
+                        homepageHeader.style.opacity = '1';
+                    } else {
+                        homepageHeader.style.opacity = '0';
+                        homepageHeader.classList.add('d-none'); // Hide hero
+                        subpageHeader.classList.remove('d-none');
+                        subpageHeader.style.opacity = '1';
+                    }
+                }
+            }
+            // Trigger update on page load and on popstate (back/forward button)
+            updateHeaderVisibility();
+            window.addEventListener('popstate', updateHeaderVisibility);
+
+            // Rich-Text-Editor initialisieren
+            if (document.querySelector('.rich-editor')) {
+                $('.rich-editor').summernote({
+                    placeholder: 'Blogbeitrag schreiben...',
+                    tabsize: 2,
+                    height: 300,
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'underline', 'clear']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    lang: 'de-DE'
+                });
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

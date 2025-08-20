@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Schüler bearbeiten{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Schüler bearbeiten
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" autocomplete="off">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vorname" class="form-label">Vorname *</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="vorname" 
+                                           name="vorname" 
+                                           value="{{ schueler.vorname if schueler else '' }}" 
+                                           required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nachname" class="form-label">Nachname *</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="nachname" 
+                                           name="nachname" 
+                                           value="{{ schueler.nachname if schueler else '' }}" 
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="geburtsdatum" class="form-label">Geburtsdatum</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="geburtsdatum" 
+                                           name="geburtsdatum" 
+                                           value="{{ schueler.geburtsdatum.strftime('%Y-%m-%d') if schueler and schueler.geburtsdatum else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="geschlecht" class="form-label">Geschlecht</label>
+                                    <select class="form-select" id="geschlecht" name="geschlecht">
+                                        <option value="">Bitte wählen</option>
+                                        <option value="m" {{ 'selected' if schueler and schueler.geschlecht == 'm' else '' }}>Männlich</option>
+                                        <option value="w" {{ 'selected' if schueler and schueler.geschlecht == 'w' else '' }}>Weiblich</option>
+                                        <option value="d" {{ 'selected' if schueler and schueler.geschlecht == 'd' else '' }}>Divers</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">E-Mail</label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="email" 
+                                           name="email" 
+                                           value="{{ schueler.email if schueler else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="telefon" class="form-label">Telefon</label>
+                                    <input type="tel" 
+                                           class="form-control" 
+                                           id="telefon" 
+                                           name="telefon" 
+                                           value="{{ schueler.telefon if schueler else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="adresse" class="form-label">Adresse</label>
+                            <textarea class="form-control" 
+                                      id="adresse" 
+                                      name="adresse" 
+                                      rows="3">{{ schueler.adresse if schueler else '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="schueler_nummer" class="form-label">Schülernummer</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="schueler_nummer" 
+                                           name="schueler_nummer" 
+                                           value="{{ schueler.schueler_nummer if schueler else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="eintrittsdatum" class="form-label">Eintrittsdatum</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="eintrittsdatum" 
+                                           name="eintrittsdatum" 
+                                           value="{{ schueler.eintrittsdatum.strftime('%Y-%m-%d') if schueler and schueler.eintrittsdatum else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="klasse_id" class="form-label">Klasse</label>
+                                    <select class="form-select" id="klasse_id" name="klasse_id" required>
+                                        <option value="">Klasse wählen</option>
+                                        {% for klasse in klassen %}
+                                            <option value="{{ klasse.id }}" 
+                                                    {{ 'selected' if schueler and schueler.klasse_id == klasse.id else '' }}>
+                                                {{ klasse.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="aktiv" {{ 'selected' if schueler and schueler.status == 'aktiv' else '' }}>Aktiv</option>
+                                        <option value="inaktiv" {{ 'selected' if schueler and schueler.status == 'inaktiv' else '' }}>Inaktiv</option>
+                                        <option value="abgemeldet" {{ 'selected' if schueler and schueler.status == 'abgemeldet' else '' }}>Abgemeldet</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bemerkungen" class="form-label">Bemerkungen</label>
+                            <textarea class="form-control" 
+                                      id="bemerkungen" 
+                                      name="bemerkungen" 
+                                      rows="3">{{ schueler.bemerkungen if schueler else '' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <button type="submit" class="btn btn-success me-2">
+                                    <i class="fas fa-save me-2"></i>Speichern
+                                </button>
+                                <a href="{{ url_for('klassenbuch_details', klasse_id=schueler.klasse_id if schueler else klasse_id) }}" 
+                                   class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Zurück
+                                </a>
+                            </div>
+                            {% if schueler %}
+                                <button type="button" 
+                                        class="btn btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal">
+                                    <i class="fas fa-trash me-2"></i>Löschen
+                                </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if schueler %}
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Schüler-Informationen
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Erstellt am:</strong> {{ schueler.created_at.strftime('%d.%m.%Y %H:%M') if schueler.created_at else 'Nicht verfügbar' }}</p>
+                                <p><strong>Zuletzt geändert:</strong> {{ schueler.updated_at.strftime('%d.%m.%Y %H:%M') if schueler.updated_at else 'Nicht verfügbar' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>ID:</strong> {{ schueler.id }}</p>
+                                <p><strong>Aktuelle Klasse:</strong> {{ schueler.klasse.name if schueler.klasse else 'Keine Klasse zugewiesen' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+{% if schueler %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Schüler löschen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sind Sie sicher, dass Sie den Schüler <strong>{{ schueler.vorname }} {{ schueler.nachname }}</strong> löschen möchten?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Diese Aktion kann nicht rückgängig gemacht werden!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form method="POST" action="{{ url_for('schueler_loeschen', schueler_id=schueler.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Löschen bestätigen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Form Validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function(e) {
+        const vorname = document.getElementById('vorname').value.trim();
+        const nachname = document.getElementById('nachname').value.trim();
+        const klasseId = document.getElementById('klasse_id').value;
+        
+        if (!vorname || !nachname || !klasseId) {
+            e.preventDefault();
+            alert('Bitte füllen Sie alle Pflichtfelder aus (Vorname, Nachname, Klasse).');
+            return false;
+        }
+    });
+    
+    // Auto-focus auf erstes Eingabefeld
+    document.getElementById('vorname').focus();
+});
+</script>
+{% endblock %}

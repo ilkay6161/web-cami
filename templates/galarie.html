@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Galerie - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Galerie{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h2 class="card-title mb-0">Unsere Moschee und Veranstaltungen</h2>
+    </div>
+    <div class="card-body">
+        <p class="lead">Hier finden Sie Bilder unserer Moschee und von verschiedenen Veranstaltungen.</p>
+        
+        <!-- Bild-Modal für Vollansicht -->
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Vollbild">
+                <p id="imageModalDescription" class="mt-2 text-muted"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <script>
+        function showImageModal(imageSrc, title, description) {
+            document.getElementById('modalImage').src = imageSrc;
+            document.getElementById('imageModalTitle').textContent = title;
+            document.getElementById('imageModalDescription').textContent = description;
+            var modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+        </script>
+        
+        {% if alben %}
+            <!-- Alben anzeigen -->
+            <div class="row">
+                {% for album in alben %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        {% if album.bilder and album.bilder|length > 0 %}
+                            <img src="{{ url_for('static', filename='uploads/galerie/' + album.bilder[0].dateiname) }}" 
+                                 class="card-img-top" alt="{{ album.name }}" 
+                                 style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top gallery-placeholder" style="height: 200px;">
+                                <div class="text-center">
+                                    <i class="fas fa-images fa-3x mb-2"></i>
+                                    <p>Keine Bilder</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ album.name }}</h5>
+                            <p class="card-text">{{ album.beschreibung or 'Keine Beschreibung' }}</p>
+                            <p class="card-text">
+                                <small class="text-muted">{{ album.bilder|length }} Bilder</small>
+                            </p>
+                            <a href="{{ url_for('galarie_album', album_id=album.id) }}" class="btn btn-primary">Album ansehen</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Einzelne Bilder ohne Album -->
+        {% if einzelbilder %}
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">Weitere Bilder</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for bild in einzelbilder %}
+                        <div class="col-md-3 mb-4">
+                            <div class="card h-100">
+                                <img src="{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}" 
+                                     class="card-img-top" alt="{{ bild.titel or 'Bild' }}" 
+                                     style="height: 180px; object-fit: cover;"
+                                     onclick="showImageModal('{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}', '{{ bild.titel or 'Foto' }}', '{{ bild.beschreibung or '' }}')">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ bild.titel or 'Foto' }}</h5>
+                                    {% if bild.beschreibung %}
+                                    <p class="card-text small text-muted">{{ bild.beschreibung }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        
+        {% if not alben and not einzelbilder %}
+            <!-- Keine Alben vorhanden -->
+            <div class="row">
+                {% for i in range(1, 7) %}
+                <div class="col-md-4 mb-4">
+                    <div class="gallery-placeholder">
+                        <div class="text-center">
+                            <i class="fas fa-mosque fa-3x mb-2"></i>
+                            <p>Moschee-Bild {{ i }}</p>
+                        </div>
+                    </div>
+                    <h5 class="text-center">Bild {{ i }} Titel</h5>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="alert alert-info mt-4">
+                <p><i class="fas fa-info-circle me-2"></i> Weitere Bilder werden in Kürze hinzugefügt.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-secondary">
+        <h3 class="card-title mb-0">Virtuelle Tour</h3>
+    </div>
+    <div class="card-body">
+        <p>Erleben Sie eine virtuelle Tour durch unsere Moschee.</p>
+        
+        <div class="ratio ratio-16x9">
+            <!-- Placeholder for virtual tour -->
+            <div class="d-flex align-items-center justify-content-center bg-dark">
+                <div class="text-center">
+                    <i class="fas fa-vr-cardboard fa-5x mb-3"></i>
+                    <h4>Virtuelle Tour</h4>
+                    <p>Demnächst verfügbar</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

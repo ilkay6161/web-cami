@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Galerie Verwaltung{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-images me-2"></i>Galerie Verwaltung</h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-info me-2">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+            <a href="{{ url_for('galarie') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-eye me-1"></i>Öffentliche Ansicht
+            </a>
+        </div>
+    </div>
+
+    <!-- Album erstellen -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="fas fa-folder-plus me-2"></i>Neues Album erstellen</h4>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_galerie_album_erstellen') }}" method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="album_name" class="form-label">Album Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="album_name" name="album_name" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="album_beschreibung" class="form-label">Beschreibung</label>
+                        <input type="text" class="form-control" id="album_beschreibung" name="album_beschreibung">
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>Album erstellen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bestehende Alben -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-folder-open me-2"></i>Alben verwalten</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for album in alben %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ album.name }}</h5>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_galerie_album_bearbeiten', album_id=album.id) }}">
+                                        <i class="fas fa-edit me-1"></i>Bearbeiten
+                                    </a></li>
+                                    <li><button class="dropdown-item text-danger" onclick="confirmDeleteAlbum({{ album.id }}, '{{ album.name }}')">
+                                        <i class="fas fa-trash-alt me-1"></i>Löschen
+                                    </button></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ album.beschreibung or 'Keine Beschreibung' }}</p>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-info">{{ album.bilder|length }} Bilder</span>
+                                <a href="{{ url_for('admin_galerie_album', album_id=album.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-photo-video me-1"></i>Bilder verwalten
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>Noch keine Alben vorhanden. Erstellen Sie oben Ihr erstes Album.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bilder hochladen -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0"><i class="fas fa-cloud-upload-alt me-2"></i>Bilder hochladen</h4>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_galerie_bild_upload') }}" method="POST" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="album_id" class="form-label">Album auswählen (optional)</label>
+                        <select class="form-select" id="album_id" name="album_id">
+                            <option value="">-- Kein Album (direkt in die Galerie) --</option>
+                            {% for album in alben %}
+                            <option value="{{ album.id }}">{{ album.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Lassen Sie dieses Feld leer, um Bilder ohne Album hochzuladen.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="bilder" class="form-label">Bilder auswählen <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="bilder" name="bilder" accept="image/*" multiple required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="titel" class="form-label">Titel</label>
+                        <input type="text" class="form-control" id="titel" name="titel" placeholder="Titel für alle ausgewählten Bilder">
+                        <div class="form-text">Lassen Sie dieses Feld leer, um die Originaldateinamen zu verwenden.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="beschreibung" class="form-label">Beschreibung</label>
+                        <input type="text" class="form-control" id="beschreibung" name="beschreibung" placeholder="Beschreibung für alle ausgewählten Bilder">
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-upload me-1"></i>Bilder hochladen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Einzelne Bilder ohne Album -->
+    <div class="card mt-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0"><i class="fas fa-photo-video me-2"></i>Bilder ohne Album</h4>
+        </div>
+        <div class="card-body">
+            {% set einzelbilder = einzelbilder|default([]) %}
+            {% if einzelbilder %}
+                <div class="row">
+                    {% for bild in einzelbilder %}
+                    <div class="col-md-3 col-sm-6 mb-4">
+                        <div class="card h-100">
+                            <img src="{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}" 
+                                 class="card-img-top" alt="{{ bild.titel or 'Bild' }}" 
+                                 style="height: 150px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ bild.titel or 'Kein Titel' }}</h5>
+                                <p class="card-text small text-muted">{{ bild.beschreibung or 'Keine Beschreibung' }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-sm btn-primary" onclick="previewImage('{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}', '{{ bild.titel or 'Vorschau' }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="confirmDeleteImage({{ bild.id }}, '{{ bild.titel or 'dieses Bild' }}')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Keine Bilder ohne Album vorhanden.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Album löschen Modal -->
+<div class="modal fade" id="deleteAlbumModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Album löschen
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sind Sie sicher, dass Sie das Album <strong id="deleteAlbumName"></strong> löschen möchten?</p>
+                <p class="text-danger">Diese Aktion kann nicht rückgängig gemacht werden! Alle Bilder in diesem Album werden ebenfalls gelöscht.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form id="deleteAlbumForm" method="POST">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i>Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDeleteAlbum(id, name) {
+    document.getElementById('deleteAlbumName').textContent = name;
+    document.getElementById('deleteAlbumForm').action = "{{ url_for('admin_galerie_album_loeschen', album_id=0) }}".replace("0", id);
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteAlbumModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

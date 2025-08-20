@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Veranstaltung bearbeiten - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Veranstaltung bearbeiten{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-calendar-alt me-2"></i>Veranstaltung bearbeiten</h2>
+                <a href="{{ url_for('admin_veranstaltungen') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück zur Übersicht
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-edit me-2"></i>{{ veranstaltung.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="title" class="form-label">Titel *</label>
+                                <input type="text" class="form-control" id="title" name="title" required 
+                                       value="{{ veranstaltung.title }}" placeholder="z.B. Freitagsgebet, Vortrag, Veranstaltung">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="event_date" class="form-label">Datum *</label>
+                                <input type="date" class="form-control" id="event_date" name="event_date" required
+                                       value="{{ veranstaltung.event_date.strftime('%Y-%m-%d') }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="event_time" class="form-label">Uhrzeit</label>
+                                <input type="time" class="form-control" id="event_time" name="event_time" 
+                                       value="{{ veranstaltung.event_time or '' }}" placeholder="z.B. 14:30">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="location" class="form-label">Ort</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       value="{{ veranstaltung.location or '' }}" placeholder="z.B. Gebetsraum, Vereinsheim">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Beschreibung</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" 
+                                      placeholder="Weitere Details zur Veranstaltung...">{{ veranstaltung.description or '' }}</textarea>
+                        </div>
+
+                        <div class="card border-info mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-repeat me-2"></i>Wiederholung</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="is_recurring" name="is_recurring" 
+                                           {% if veranstaltung.is_recurring %}checked{% endif %} onchange="toggleRecurrence()">
+                                    <label class="form-check-label" for="is_recurring">
+                                        Diese Veranstaltung wiederholt sich regelmäßig
+                                    </label>
+                                </div>
+                                <div id="recurrence_options" {% if not veranstaltung.is_recurring %}style="display: none;"{% endif %}>
+                                    <label for="recurrence_type" class="form-label">Wiederholungsart</label>
+                                    <select class="form-control" id="recurrence_type" name="recurrence_type">
+                                        <option value="">Wählen Sie...</option>
+                                        <option value="täglich" {% if veranstaltung.recurrence_type == 'täglich' %}selected{% endif %}>Täglich</option>
+                                        <option value="wöchentlich" {% if veranstaltung.recurrence_type == 'wöchentlich' %}selected{% endif %}>Wöchentlich</option>
+                                        <option value="monatlich" {% if veranstaltung.recurrence_type == 'monatlich' %}selected{% endif %}>Monatlich</option>
+                                        <option value="jährlich" {% if veranstaltung.recurrence_type == 'jährlich' %}selected{% endif %}>Jährlich</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Erstellt:</strong> {{ veranstaltung.created_at.strftime('%d.%m.%Y %H:%M') }}<br>
+                                {% if veranstaltung.updated_at != veranstaltung.created_at %}
+                                <strong>Zuletzt geändert:</strong> {{ veranstaltung.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin_veranstaltungen') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Abbrechen
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-1"></i>Änderungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleRecurrence() {
+    const checkbox = document.getElementById('is_recurring');
+    const options = document.getElementById('recurrence_options');
+    
+    if (checkbox.checked) {
+        options.style.display = 'block';
+    } else {
+        options.style.display = 'none';
+        document.getElementById('recurrence_type').value = '';
+    }
+}
+</script>
+{% endblock %}

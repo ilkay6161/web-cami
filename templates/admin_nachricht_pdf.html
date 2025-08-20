@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nachricht PDF - {{ nachricht.subject }}</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { background: white !important; color: black !important; }
+            .card { border: 1px solid #ccc !important; }
+        }
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        .pdf-content {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body class="bg-white text-dark">
+    <div class="container mt-4">
+        <div class="no-print mb-3">
+            <button onclick="window.print()" class="btn btn-primary me-2">
+                <i class="fas fa-print me-1"></i>Drucken
+            </button>
+            <button onclick="window.close()" class="btn btn-secondary">
+                <i class="fas fa-times me-1"></i>Schließen
+            </button>
+        </div>
+        
+        <div class="pdf-header">
+            <h1>DITIB Salzgitter Bad</h1>
+            <h3>Nachricht Export</h3>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="pdf-content">
+                    {{ pdf_content|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center text-muted">
+            <small>Exportiert am {{ moment().format('DD.MM.YYYY HH:mm') }} Uhr</small>
+        </div>
+    </div>
+
+    <script>
+        // Auto-print wenn gewünscht
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('autoprint') === 'true') {
+            window.onload = function() {
+                window.print();
+            }
+        }
+    </script>
+</body>
+</html>

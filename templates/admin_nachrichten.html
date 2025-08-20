@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Nachrichten Verwaltung - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Nachrichten Verwaltung{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-envelope me-2"></i>Nachrichten Verwaltung</h2>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück zum Dashboard
+                </a>
+            </div>
+
+            {% if nachrichten %}
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Alle Nachrichten ({{ nachrichten|length }})</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Absender</th>
+                                    <th>Betreff</th>
+                                    <th>Datum</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nachricht in nachrichten %}
+                                <tr class="{{ 'table-warning' if not nachricht.is_read else '' }}">
+                                    <td>
+                                        {% if nachricht.is_read %}
+                                            <span class="badge bg-success"><i class="fas fa-check"></i> Gelesen</span>
+                                        {% else %}
+                                            <span class="badge bg-warning"><i class="fas fa-exclamation"></i> Neu</span>
+                                        {% endif %}
+                                        {% if nachricht.admin_response %}
+                                            <span class="badge bg-info ms-1"><i class="fas fa-reply"></i> Beantwortet</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ nachricht.sender_name }}</strong><br>
+                                        <small class="text-muted">{{ nachricht.sender_email }}</small>
+                                    </td>
+                                    <td>{{ nachricht.subject }}</td>
+                                    <td>{{ nachricht.received_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('admin_nachricht_detail', message_id=nachricht.id) }}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i> Anzeigen
+                                            </a>
+                                            <a href="{{ url_for('admin_nachricht_pdf', message_id=nachricht.id) }}" 
+                                               class="btn btn-sm btn-secondary" target="_blank">
+                                                <i class="fas fa-file-pdf"></i> PDF
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <h4><i class="fas fa-inbox me-2"></i>Keine Nachrichten vorhanden</h4>
+                <p>Es sind noch keine Nachrichten eingegangen.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

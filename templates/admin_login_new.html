@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login - SmartRecorder{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-lock me-2"></i>Admin Login</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if fehler %}
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ fehler }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" action="{{ url_for('blog_admin_login') }}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Benutzername</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       placeholder="Benutzername eingeben" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Passwort</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Passwort eingeben" required>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-2">
+                                <i class="fas fa-sign-in-alt me-2"></i>Anmelden
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <a href="{{ url_for('index') }}" class="text-decoration-none">
+                        <i class="fas fa-arrow-left me-1"></i>Zurück zur Startseite
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

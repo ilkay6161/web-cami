@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Eintrag bearbeiten - Ahde Vefa{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-edit me-2"></i>Eintrag bearbeiten</h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-info me-2">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+            <a href="{{ url_for('admin_ahde_vefa') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-users me-1"></i>Alle Einträge
+            </a>
+        </div>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0"><i class="fas fa-edit me-2"></i>Eintrag bearbeiten</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="aktion" value="bearbeiten">
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ eintrag.name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="birth_date" class="form-label">Geburtsdatum</label>
+                            <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ eintrag.birth_date }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="death_date" class="form-label">Todesdatum</label>
+                            <input type="date" class="form-control" id="death_date" name="death_date" value="{{ eintrag.death_date }}">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('statistik') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Abbrechen
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-warning me-2">
+                                    <i class="fas fa-save me-1"></i>Änderungen speichern
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="deleteEntry()">
+                                    <i class="fas fa-trash me-1"></i>Löschen
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Eintrag löschen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sind Sie sicher, dass Sie den Eintrag für <strong>{{ eintrag.name }}</strong> löschen möchten?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Diese Aktion kann nicht rückgängig gemacht werden!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form method="POST" class="d-inline">
+                    <input type="hidden" name="aktion" value="loeschen">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteEntry() {
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

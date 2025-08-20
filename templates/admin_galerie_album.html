@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Album Verwaltung{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-images me-2"></i>Album: {{ album.name }}</h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-info me-2">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+            <a href="{{ url_for('admin_galerie') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-arrow-left me-1"></i>Zurück zur Galerie
+            </a>
+            <a href="{{ url_for('admin_galerie_album_bearbeiten', album_id=album.id) }}" class="btn btn-outline-warning me-2">
+                <i class="fas fa-edit me-1"></i>Album bearbeiten
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Album-Details</h4>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">{{ album.name }}</dd>
+                        
+                        <dt class="col-sm-4">Beschreibung:</dt>
+                        <dd class="col-sm-8">{{ album.beschreibung or 'Keine Beschreibung' }}</dd>
+                        
+                        <dt class="col-sm-4">Erstellt am:</dt>
+                        <dd class="col-sm-8">{{ album.erstellungsdatum.strftime('%d.%m.%Y, %H:%M') }}</dd>
+                        
+                        <dt class="col-sm-4">Anzahl Bilder:</dt>
+                        <dd class="col-sm-8">{{ album.bilder|length }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Bilder hochladen</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin_galerie_bild_upload') }}" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="album_id" value="{{ album.id }}">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="bilder" class="form-label">Bilder auswählen <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="bilder" name="bilder" accept="image/*" multiple required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="titel" class="form-label">Titel</label>
+                                <input type="text" class="form-control" id="titel" name="titel" placeholder="Titel für alle ausgewählten Bilder">
+                                <div class="form-text">Lassen Sie dieses Feld leer, um die Originaldateinamen zu verwenden.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="beschreibung" class="form-label">Beschreibung</label>
+                                <input type="text" class="form-control" id="beschreibung" name="beschreibung" placeholder="Beschreibung für alle ausgewählten Bilder">
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-upload me-1"></i>Bilder hochladen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bildergalerie -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-photo-video me-2"></i>Bilder in diesem Album</h4>
+        </div>
+        <div class="card-body">
+            {% if bilder %}
+                <div class="row">
+                    {% for bild in bilder %}
+                    <div class="col-md-4 col-lg-3 mb-4">
+                        <div class="card h-100">
+                            <img src="{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}" 
+                                 class="card-img-top" alt="{{ bild.titel or 'Bild' }}" 
+                                 style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ bild.titel or 'Kein Titel' }}</h5>
+                                <p class="card-text small text-muted">{{ bild.beschreibung or 'Keine Beschreibung' }}</p>
+                                <p class="card-text small text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i>{{ bild.upload_datum.strftime('%d.%m.%Y') }}
+                                </p>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-sm btn-primary" onclick="previewImage('{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}', '{{ bild.titel or 'Vorschau' }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="confirmDeleteImage({{ bild.id }}, '{{ bild.titel or 'dieses Bild' }}')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Noch keine Bilder in diesem Album vorhanden. Laden Sie oben Bilder hoch.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bild Vorschau Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewTitle">Bildvorschau</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="previewImage" src="" alt="Bildvorschau" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bild löschen Modal -->
+<div class="modal fade" id="deleteImageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Bild löschen
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sind Sie sicher, dass Sie das Bild <strong id="deleteImageName"></strong> löschen möchten?</p>
+                <p class="text-danger">Diese Aktion kann nicht rückgängig gemacht werden!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form id="deleteImageForm" method="POST">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i>Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewImage(src, title) {
+    document.getElementById('previewImage').src = src;
+    document.getElementById('previewTitle').textContent = title;
+    const previewModal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+    previewModal.show();
+}
+
+function confirmDeleteImage(id, name) {
+    document.getElementById('deleteImageName').textContent = name;
+    document.getElementById('deleteImageForm').action = "{{ url_for('admin_galerie_bild_loeschen', bild_id=0) }}".replace("0", id);
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteImageModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

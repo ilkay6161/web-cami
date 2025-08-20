@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Eintrag bearbeiten / löschen{% endblock %}
+{% block content %}
+
+<div class="container py-5">
+    <h2>Eintrag bearbeiten / löschen</h2>
+
+    {% if passwort_korrekt %}
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ eintrag.name }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="birth_date" class="form-label">Geburtsdatum</label>
+                <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ eintrag.birth_date }}">
+            </div>
+            <div class="mb-3">
+                <label for="death_date" class="form-label">Todestag</label>
+                <input type="date" class="form-control" id="death_date" name="death_date" value="{{ eintrag.death_date }}">
+            </div>
+            <div class="mb-3">
+                <label for="image" class="form-label">Bild ändern</label>
+                <input type="file" class="form-control" id="image" name="image">
+                {% if eintrag.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + eintrag.image_filename) }}" alt="Aktuelles Bild" class="img-thumbnail mt-2" style="max-width: 200px;">
+                {% else %}
+                    <p>Kein Bild vorhanden</p>
+                {% endif %}
+            </div>
+            <button type="submit" name="aktion" value="bearbeiten" class="btn btn-primary">
+                Änderungen speichern
+            </button>
+            <button type="submit" name="aktion" value="loeschen" class="btn btn-danger">
+                Eintrag löschen
+            </button>
+            <a href="{{ url_for('ahde_vefa_view', passwort=passwort) }}" class="btn btn-secondary">
+                Abbrechen
+            </a>
+        </form>
+    {% else %}
+        <form method="post">
+            <div class="mb-3">
+                <label for="passwort" class="form-label">Passwort</label>
+                <input type="password" class="form-control" id="passwort" name="passwort" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                Bestätigen
+            </button>
+            <a href="{{ url_for('ahde_vefa_view', passwort=passwort) }}" class="btn btn-secondary">
+                Abbrechen
+            </a>
+        </form>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(category_filter=['danger']) %}
+        {% if messages %}
+            <div class="alert alert-danger mt-3">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+</div>
+
+{% endblock %}

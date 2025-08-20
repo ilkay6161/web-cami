@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Nachricht Details - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Nachricht Details{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-envelope-open me-2"></i>Nachricht Details</h2>
+                <div>
+                    <a href="{{ url_for('admin_nachricht_pdf', message_id=nachricht.id) }}" 
+                       class="btn btn-secondary me-2" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>PDF Export
+                    </a>
+                    <a href="{{ url_for('admin_nachrichten') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-1"></i>Zurück zur Übersicht
+                    </a>
+                </div>
+            </div>
+
+            <!-- Nachricht Details -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-envelope me-2"></i>{{ nachricht.subject }}
+                        {% if not nachricht.is_read %}
+                            <span class="badge bg-warning ms-2">Neu</span>
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Absender:</strong><br>
+                            {{ nachricht.sender_name }}<br>
+                            <a href="mailto:{{ nachricht.sender_email }}">{{ nachricht.sender_email }}</a>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Eingegangen:</strong><br>
+                            {{ nachricht.received_at.strftime('%d.%m.%Y um %H:%M Uhr') }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <strong>Nachricht:</strong>
+                        <div class="mt-2 p-3 bg-light border rounded">
+                            {{ nachricht.message|nl2br|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Antwort -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-reply me-2"></i>Admin Antwort</h4>
+                </div>
+                <div class="card-body">
+                    {% if nachricht.admin_response %}
+                    <div class="alert alert-info">
+                        <strong>Antwort vom {{ nachricht.response_date.strftime('%d.%m.%Y um %H:%M Uhr') }}:</strong>
+                        <div class="mt-2">{{ nachricht.admin_response|nl2br|safe }}</div>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('admin_nachricht_antworten', message_id=nachricht.id) }}">
+                        <div class="mb-3">
+                            <label for="antwort" class="form-label">
+                                {% if nachricht.admin_response %}Antwort bearbeiten:{% else %}Antwort verfassen:{% endif %}
+                            </label>
+                            <textarea class="form-control" id="antwort" name="antwort" rows="6" 
+                                      placeholder="Hier können Sie Ihre Antwort eingeben...">{{ nachricht.admin_response or '' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane me-1"></i>
+                            {% if nachricht.admin_response %}Antwort aktualisieren{% else %}Antwort speichern{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

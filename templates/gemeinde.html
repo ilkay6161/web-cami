@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Unsere Gemeinde - DITIB Salzgitter Bad{% endblock %}
+{% block subpage_header_title %}Unsere Gemeinde{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+
+        <!-- Geschichte & Struktur -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Geschichte & Struktur</h2>
+                <p>
+                    Die türkischen Muslime in Salzgitter-Bad und Umgebung nutzten vor der Vereinsgründung am <strong>18. Mai 1987</strong> verschiedene gemietete Räume zur religiösen Praxis.
+                </p>
+                <p>
+                    Mit wachsendem Bedarf wurde am <strong>1. März 1999</strong> das heutige Grundstück erworben. Es entstand ein moderner Moscheekomplex mit Minarett, Kuppel, Sozialräumen und mehr.
+                </p>
+                <p>
+                    Der Verein zählt rund <strong>250 Familienmitglieder</strong> und bietet religiöse, soziale, kulturelle und sportliche Aktivitäten für Jung und Alt.
+                </p>
+                <p>
+                    Er ist Mitglied der <strong>DITIB Köln</strong>, im Vereinsregister Salzgitter und beim Finanzamt Wolfenbüttel eingetragen.
+                </p>
+            </div>
+        </div>
+
+        <!-- Vorstände -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Unser Vorstand</h3>
+                <ul>
+                    <li><strong>Vorsitzender:</strong> Mehmet Yılmaz</li>
+                    <li><strong>Stellv. Vorsitzender:</strong> Ahmet Demir</li>
+                    <li><strong>Finanzen:</strong> Fatma Kaya</li>
+                    <li><strong>Schriftführung:</strong> Yusuf Özkan</li>
+                </ul>
+                <h5 class="mt-4">Frauenvorstand</h5>
+                <ul>
+                    <li><strong>Leitung:</strong> Emine Toprak</li>
+                    <li><strong>Bildung & Soziales:</strong> Zehra Aydin</li>
+                </ul>
+                <h5 class="mt-4">Jugendvorstand</h5>
+                <ul>
+                    <li><strong>Jugendsprecher:</strong> Murat Şahin</li>
+                    <li><strong>Organisation:</strong> Elif Yıldız</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Dokumente -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h4 class="card-title mb-0"><i class="fas fa-file-download me-2"></i>Dokumente zum Download</h4>
+            </div>
+            <div class="card-body">
+
+					<li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/static/mitgliedsantrag.pdf" target="_blank">Mitgliedsantrag der Gemeinde</a>
+                        <i class="fas fa-book text-primary"></i>
+                    </li>
+				     <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/static/satzung.pdf" target="_blank">Satzung der Gemeinde</a>
+                        <i class="fas fa-book text-primary"></i>
+                    </li>
+            </div>
+        </div>
+
+        <!-- Ahde Vefa -->
+        <div class="card mb-4 border-start border-primary border-5 shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title">
+                    <i class="fas fa-heartbeat text-primary me-2"></i>Gedenken: Ahde-Vefa
+                </h4>
+                <p>
+                    Unsere Gemeinde gedenkt liebevoll der verstorbenen Mitglieder. 
+                    Besuchen Sie unsere Ahde-Vefa-Seite für Biografien und Erinnerungen.
+                </p>
+                <a href="{{ url_for('ahde_vefa_view') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-link me-1"></i> Zur Ahde-Vefa-Seite
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Rechte Spalte -->
+    <div class="col-lg-4">
+
+        <!-- Mitgliederstatistik -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Mitgliederstatistik</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Aktive Familien:</strong> 250+</p>
+                <p><strong>Jugendliche:</strong> 80+</p>
+                <p><strong>Damen aktiv:</strong> 100+</p>
+                <canvas id="mitgliederChart" width="300" height="250"></canvas>
+            </div>
+        </div>
+
+        <!-- Spendenbox -->
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="card-title">Spenden</h4>
+                <p>Unterstützen Sie unsere Arbeit mit einer Spende.</p>
+                <a href="https://www.paypal.com/donate?hosted_button_id=DEIN_BUTTON_ID" target="_blank" class="btn btn-success btn-lg">
+                    <i class="fas fa-donate me-2"></i> Jetzt über PayPal spenden
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ctx = document.getElementById('mitgliederChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Familien', 'Jugendliche', 'Damen'],
+            datasets: [{
+                label: 'Anzahl',
+                data: [250, 80, 100],
+                backgroundColor: ['#007bff', '#ffc107', '#28a745']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 50 }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Kontakt - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Kontakt{% endblock %}
+
+{% block head_extra %}
+    <style>
+        /* Define height for the map container and style the overlay */
+        #map-container {
+            position: relative;
+            height: 400px; /* Festgelegte Höhe für den Kartenbereich */
+            border-radius: var(--border-radius-md); /* Übernimmt den border-radius vom Theme */
+            overflow: hidden; /* Stellt sicher, dass der Inhalt den border-radius respektiert */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Leichter Schatten für den Kartenbereich */
+        }
+        #mapid {
+            height: 100%; /* Karte füllt den Elterncontainer aus */
+            width: 100%;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.95); /* Halbdurchsichtiger weißer Überlagerungs-Hintergrund */
+            z-index: 10; /* Stellt sicher, dass die Überlagerung über der Karte liegt */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            transition: opacity 0.3s ease-in-out;
+            color: var(--text-dark);
+        }
+        .map-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* Zusätzliche Styles für Konsistenz */
+        :root {
+            --primary-teal: #008C9E; /* Originale Akzentfarbe: Türkis */
+            --secondary-teal: #00A9BE; /* Hellerer Türkiston für Sub-Akzente */
+            --accent-green: #28A745; /* Kräftiges Grün für Erfolgsmeldungen und Spenden */
+            --text-dark: #212529;    /* Dunkler Text für Lesbarkeit */
+            --text-medium: #495057;  /* Mittlerer Grauton für sekundäre Texte */
+            --text-light: #6c757d;   /* Heller Grauton für weniger wichtige Informationen */
+            --background-light: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --shadow-light: rgba(0, 0, 0, 0.08);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+            --border-radius-lg: 16px;
+            --border-radius-md: 10px;
+            --transition-speed: 0.3s;
+        }
+        .card-header.bg-secondary {
+            background-color: var(--secondary-teal) !important;
+            color: white;
+        }
+        .card-header.bg-primary {
+            background-color: var(--primary-teal) !important;
+            color: white;
+        }
+        .btn-primary {
+            background-color: var(--primary-teal);
+            border-color: var(--primary-teal);
+        }
+        .btn-primary:hover {
+            background-color: var(--secondary-teal);
+            border-color: var(--secondary-teal);
+        }
+        .text-primary {
+            color: var(--primary-teal) !important;
+        }
+        .text-secondary {
+            color: var(--text-medium) !important;
+        }
+        .form-label {
+            font-weight: 600;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow-lg mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h2 class="card-title mb-0 fs-4">Kontaktieren Sie uns</h2>
+                </div>
+                <div class="card-body p-4">
+                    {% if message_sent %}
+                    <div class="alert alert-success">
+                        <p><i class="fas fa-check-circle me-2"></i> Ihre Nachricht wurde erfolgreich gesendet. Wir werden uns so schnell wie möglich bei Ihnen melden.</p>
+                    </div>
+                    {% else %}
+                    <form id="contactForm" method="POST">
+                        <p class="small text-muted mb-4">Felder mit <span class="text-danger">*</span> sind Pflichtfelder.</p>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control {% if errors and errors.name %}is-invalid{% endif %}" id="name" name="name" required placeholder="Geben Sie Ihren Namen ein">
+                            {% if errors and errors.name %}
+                            <div class="invalid-feedback">{{ errors.name }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-Mail <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control {% if errors and errors.email %}is-invalid{% endif %}" id="email" name="email" required placeholder="Ihre E-Mail-Adresse">
+                            {% if errors and errors.email %}
+                            <div class="invalid-feedback">{{ errors.email }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Betreff</label>
+                            <input type="text" class="form-control" id="subject" name="subject" placeholder="Kurze Beschreibung Ihres Anliegens">
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Nachricht <span class="text-danger">*</span></label>
+                            <textarea class="form-control {% if errors and errors.message %}is-invalid{% endif %}" id="message" name="message" rows="6" required placeholder="Ihre Nachricht an uns"></textarea>
+                            {% if errors and errors.name %}
+                            <div class="invalid-feedback">{{ errors.message }}</div>
+                            {% endif %}
+                        </div>
+
+                        {# NEU: Datenschutz-Checkbox mit Link zum Modal #}
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="privacyConsent">
+                            <label class="form-check-label" for="privacyConsent">
+                                Ich habe die <a href="#" data-bs-toggle="modal" data-bs-target="#privacyPolicyModal" class="text-primary fw-bold">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Daten zu. <span class="text-danger">*</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitButton" disabled>
+                            <i class="fas fa-paper-plane me-2"></i> Nachricht senden
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow-lg mb-4">
+                <div class="card-header bg-secondary text-white py-3">
+                    <h3 class="card-title mb-0 fs-5">Anfahrt zu unserer Moschee</h3>
+                </div>
+                <div class="card-body p-4">
+                    {# ANGESPASSENE REIHENFOLGE: Adresse und Verkehrsmittel zuerst #}
+                    <p class="mb-2"><i class="fas fa-map-marker-alt me-2 text-primary"></i> <strong>Adresse:</strong> Braunschweiger Str. 65a, 38259 Salzgitter, Germany</p>
+					<p class="mb-2"><i class="fas fa-map-marker-alt me-2 text-primary"></i> <strong>Telefon:</strong> +49123456789 </p>
+					<p class="mb-2"><i class="fas fa-map-marker-alt me-2 text-primary"></i> <strong>E-Mail: info@ditib-salzgitter.de</p>
+                    <p class="mb-2"><i class="fas fa-bus me-2 text-primary"></i> <strong>Öffentliche Verkehrsmittel:</strong> Die nächstgelegenen Bushaltestellen sind <a href="http://www.google.com/maps/search/?api=1&query=Bushaltestelle+Salzgitter-Bad+Braunschweiger+Stra%C3%9Fe" target="_blank" class="text-decoration-none text-primary fw-bold">"Salzgitter-Bad, Braunschweiger Straße"</a> oder <a href="http://www.google.com/maps/search/?api=1&query=Bushaltestelle+Salzgitter-Bad+Krankenhaus" target="_blank" class="text-decoration-none text-primary fw-bold">"Salzgitter-Bad, Krankenhaus"</a>. Bitte prüfen Sie die aktuellen Fahrpläne für Ihre Verbindung.</p>
+                    <p class="mb-0"><i class="fas fa-car me-2 text-primary"></i> <strong>Mit dem Auto:</strong> Erreichbar über die B248 (Braunschweiger Straße). Von der A39 kommend, nehmen Sie die Ausfahrt Salzgitter-Bad. Ausreichend Parkmöglichkeiten sind in der Nähe vorhanden.</p>
+                    
+                    <hr class="my-4"> {# Optional: Trennlinie für bessere Abgrenzung #}
+
+                    {# Eingebettete OpenStreetMap-Karte #}
+                    <iframe width="100%" height="350" src="https://www.openstreetmap.org/export/embed.html?bbox=10.364463329315187%2C52.0483766937028%2C10.366973876953127%2C52.04945878381449&layer=mapnik" style="border: 1px solid black; border-radius: var(--border-radius-md);"></iframe><br/>
+                    <small><a href="https://www.openstreetmap.org/?#map=19/52.048918/10.365719" target="_blank" class="text-primary fw-bold">Größere Karte anzeigen</a></small>
+                </div>
+            </div>
+            
+          
+        </div>
+    </div>
+</div>
+
+{# NEU: Datenschutz-Modal (am Ende des Blocks, aber vor extra_js) #}
+<div class="modal fade" id="privacyPolicyModal" tabindex="-1" aria-labelledby="privacyPolicyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="privacyPolicyModalLabel">Unsere Datenschutzerklärung</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {# HIER FÜGEN SIE BITTE IHRE VOLLSTÄNDIGE DATENSCHUTZERKLÄRUNG EIN #}
+                <p>Sehr geehrte Nutzerinnen und Nutzer,</p>
+                <p>der Schutz Ihrer persönlichen Daten ist uns ein wichtiges Anliegen. Diese Datenschutzerklärung informiert Sie über die Art, den Umfang und den Zweck der Verarbeitung von personenbezogenen Daten innerhalb unseres Onlineangebotes und der mit ihm verbundenen Webseiten, Funktionen und Inhalte (nachfolgend gemeinsam bezeichnet als „Onlineangebot“ oder „Website“).</p>
+
+                <h6>1. Verantwortliche Stelle</h6>
+                <p>DITIB Türkisch Islamische Gemeinde zu Salzgitter Bad e.V.<br>
+                Braunschweigerstr. 65A<br>
+                38259 Salzgitter Bad<br>
+                E-Mail: info@ditib-salzgitter.de</p>
+
+                <h6>2. Arten der verarbeiteten Daten</h6>
+                <ul>
+                    <li>Kontaktdaten (z.B. Name, E-Mail-Adresse, Telefonnummer).</li>
+                    <li>Inhaltsdaten (z.B. Texteingaben im Kontaktformular, Fotos, Videos).</li>
+                    <li>Nutzungsdaten (z.B. besuchte Webseiten, Zugriffszeiten).</li>
+                    <li>Meta-/Kommunikationsdaten (z.B. Geräte-Informationen, IP-Adressen).</li>
+                </ul>
+
+                <h6>3. Zweck der Verarbeitung</h6>
+                <p>Wir verarbeiten personenbezogene Daten zu folgenden Zwecken:</p>
+                <ul>
+                    <li>Bereitstellung des Onlineangebotes, seiner Funktionen und Inhalte.</li>
+                    <li>Beantwortung von Kontaktanfragen und Kommunikation mit Nutzern.</li>
+                    <li>Sicherheitsmaßnahmen.</li>
+                    <li>Reichweitenmessung/Marketing (optional und nur mit Ihrer Zustimmung, z.B. bei Kartendiensten).</li>
+                </ul>
+
+                <h6>4. Rechtsgrundlagen der Verarbeitung</h6>
+                <p>Die Verarbeitung Ihrer Daten erfolgt auf Basis folgender Rechtsgrundlagen:</p>
+                <ul>
+                    <li>Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), z.B. beim Akzeptieren der Kartendienste oder Senden des Kontaktformulars.</li>
+                    <li>Zur Erfüllung unserer vertraglichen Pflichten (Art. 6 Abs. 1 lit. b DSGVO).</li>
+                    <li>Aufgrund unserer berechtigten Interessen (Art. 6 Abs. 1 lit. f DSGVO), z.B. zur Gewährleistung der Sicherheit unseres Onlineangebotes.</li>
+                </ul>
+
+                <h6>5. Datenweitergabe an Dritte</h6>
+                <p>Eine Weitergabe von Daten an Dritte erfolgt grundsätzlich nicht, es sei denn, dies ist gesetzlich vorgeschrieben (z.B. an Behörden) oder Sie haben ausdrücklich eingewilligt (z.B. bei der Nutzung von Kartendiensten wie OpenStreetMap).</p>
+
+                <h6>6. Ihre Rechte als betroffene Person</h6>
+                <p>Sie haben das Recht:</p>
+                <ul>
+                    <li>Auskunft über Ihre von uns verarbeiteten personenbezogenen Daten zu verlangen (Art. 15 DSGVO).</li>
+                    <li>Die Berichtigung unrichtiger oder die Vervollständigung unvollständiger Daten zu verlangen (Art. 16 DSGVO).</li>
+                    <li>Die Löschung Ihrer bei uns gespeicherten personenbezogenen Daten zu verlangen (Art. 17 DSGVO).</li>
+                    <li>Die Einschränkung der Verarbeitung Ihrer Daten zu verlangen (Art. 18 DSGVO).</li>
+                    <li>Datenübertragbarkeit zu erhalten (Art. 20 DSGVO).</li>
+                    <li>Ihre einmal erteilte Einwilligung jederzeit uns gegenüber zu widerrufen (Art. 7 Abs. 3 DSGVO).</li>
+                    <li>Sich bei einer Aufsichtsbehörde zu beschweren (Art. 77 DSGVO).</li>
+                </ul>
+
+                <h6>7. Speicherdauer der personenbezogenen Daten</h6>
+                <p>Die von uns verarbeiteten Daten werden gelöscht, sobald sie für ihre Zweckbestimmung nicht mehr erforderlich sind und der Löschung keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Sofern die Daten nicht gelöscht werden, weil sie für andere und gesetzlich zulässige Zwecke erforderlich sind, wird deren Verarbeitung eingeschränkt. D.h. die Daten werden gesperrt und nicht für andere Zwecke verarbeitet.</p>
+
+                <h6>8. Nutzung von Kartendiensten (OpenStreetMap)</h6>
+                <p>Wir binden Karten des Dienstes "OpenStreetMap" (https://www.openstreetmap.de) ein, die auf Grundlage der Open Data Commons Open Database Lizenz (ODbL) durch die OpenStreetMap Foundation (OSMF) angeboten werden. Wenn Sie die Karte aktivieren, wird Ihre IP-Adresse und Informationen über Ihre Nutzung der Karte an Server von OpenStreetMap übertragen. Wir haben keinen Einfluss auf diese Datenübertragung. Der Zweck und Umfang der Datenerhebung und die weitere Verarbeitung und Nutzung der Daten durch OpenStreetMap sowie Ihre diesbezüglichen Rechte und Einstellungsmöglichkeiten zum Schutz Ihrer Privatsphäre entnehmen Sie bitte den Datenschutzhinweisen von OpenStreetMap:</p>
+                <p><a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy" target="_blank">OpenStreetMap Privacy Policy</a></p>
+
+                <p>Diese Datenschutzerklärung ist eine vereinfachte Version. Bitte erstellen Sie eine umfassende und rechtskonforme Datenschutzerklärung, die alle Aspekte Ihrer Datenverarbeitung abdeckt und von einem Rechtsexperten geprüft wurde.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/validation.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Kontaktformular Datenschutz ---
+        const privacyConsentCheckbox = document.getElementById('privacyConsent');
+        const submitButton = document.getElementById('submitButton');
+
+        if (privacyConsentCheckbox && submitButton) {
+            // Initialer Zustand beim Laden der Seite
+            submitButton.disabled = !privacyConsentCheckbox.checked;
+
+            // Event Listener für Änderungen der Checkbox
+            privacyConsentCheckbox.addEventListener('change', function() {
+                submitButton.disabled = !this.checked;
+            });
+        }
+    });
+</script>
+{% endblock %}

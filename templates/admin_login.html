@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Aktuelles - DITIB Salzgitter Bad{% endblock %}
+{% block header %}Aktuelles und Neuigkeiten{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">Neuigkeiten und Ankündigungen</h2>
+            </div>
+            <div class="card-body">
+                {% if updates %}
+                    <ul class="updates-list">
+                    {% for update in updates|reverse %}
+                        <li class="update-item">
+                            <p>{{ update.message }}</p>
+                            <small class="update-timestamp">{{ update.timestamp }}</small>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="alert alert-info">
+                        Es sind noch keine Neuigkeiten vorhanden.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h3 class="card-title mb-0">Kommentare</h3>
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                    <ul class="list-group mb-3">
+                    {% for comment in comments|reverse %}
+                        <li class="list-group-item">
+                            {{ comment.comment }}<br>
+                            <small class="text-muted">{{ comment.timestamp }}</small>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>Keine Kommentare vorhanden.</p>
+                {% endif %}
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Kommentar hinzufügen:</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kommentar absenden</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        {% if admin %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Neue Nachricht hinzufügen</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Nachricht:</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Veröffentlichen</button>
+                </form>
+            </div>
+        </div>
+        <a href="{{ url_for('blog_admin_login') }}" class="btn btn-primary mb-4">Admin Login</a>
+
+        {% else %}
+        <a href="{{ url_for('blog_admin_login') }}" class="btn btn-primary mb-4">Admin Login</a>
+
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header bg-secondary">
+                <h3 class="card-title mb-0">Veranstaltungskalender</h3>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Freitagsgebet</h5>
+                            <small>Jeden Freitag</small>
+                        </div>
+                        <p class="mb-1">13:30 Uhr</p>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Koranunterricht</h5>
+                            <small>Samstags & Sonntags</small>
+                        </div>
+                        <p class="mb-1">10:00 - 13:00 Uhr</p>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Hasbihal</h5>
+                            <small>Samstags</small>
+                        </div>
+                        <p class="mb-1">21:00 - 22:30 Uhr</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

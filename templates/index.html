@@ -1,0 +1,820 @@
+
+{% extends "base.html" %}
+
+{% block title %}DITIB Salzgitter Bad - Willkommen{% endblock %}
+
+
+{% block header %}Willkommen bei DITIB Salzgitter Bad{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+{# Add animate.css link to your base.html for global availability if not already there #}
+{# <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/> #}
+
+<style>
+  /* Hintergrund-Carousel für Header mit Bildern */
+  #headerHero {
+    height: 350px; /* Höhe der Hero-Section */
+    position: relative;
+  }
+
+  #headerHero .carousel-item {
+    height: 350px;
+  }
+
+  /* Hintergrundbild-Container */
+  .hero-background {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Text-Overlay, z.B. Willkommen-Text */
+  .hero-caption {
+    background: rgba(0, 0, 0, 0.3); /* Leichter dunkler Overlay für bessere Lesbarkeit */
+    padding: 10px 20px;
+    border-radius: 8px;
+  }
+
+  /* Kleinere Überschrift */
+  #headerHero h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem; /* Kleinerer Text */
+    color: #fff;
+    margin: 0;
+  }
+</style>
+
+<div class="row g-5">
+  <div class="col-lg-12">
+    <!-- Hero-Section mit dynamischem Hintergrund -->
+    <div id="headerHero" class="carousel slide mb-5" data-bs-ride="carousel">
+      <div class="carousel-inner">
+        {% for image in header_images %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+          <div class="hero-background" style="background-image: url('{{ url_for('static', filename=image) }}');">
+            <div class="hero-caption d-flex flex-column justify-content-center align-items-center text-center p-4">
+              <h1 class="animate__animated animate__fadeInDown mb-3">Willkommen bei DITIB Salzgitter Bad</h1>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <!-- Steuerung -->
+      <button class="carousel-control-prev" type="button" data-bs-target="#headerHero" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Zurück</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#headerHero" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Weiter</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="row g-5"> {# Verwende g-5 für größere Lücken zwischen den Spalten #}
+    <div class="col-lg-8">
+        <div id="moscheeCarousel" class="carousel slide section-spacing" data-bs-ride="carousel">
+
+            <button class="carousel-control-prev" type="button" data-bs-target="#moscheeCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#moscheeCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+            <div class="carousel-indicators">
+                {% for image in header_images %}
+                <button type="button" data-bs-target="#moscheeCarousel" data-bs-slide-to="{{ loop.index - 1 }}" class="{% if loop.first %}active{% endif %}" aria-current="true" aria-label="Slide {{ loop.index }}"></button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="aboutUsCard" class="card mb-5 section-spacing">
+            <div class="card-body">
+                <h2 class="card-title">Willkommen in unserer Gemeinde</h2>
+                <p class="card-text">
+                    Die DITIB-Gemeinde Salzgitter Bad ist das pulsierende Herz muslimischen Lebens in unserer Stadt. Als ein Ort der Begegnung und des Gebets schaffen wir eine offene und einladende Atmosphäre für alle. Entdecken Sie unsere vielfältigen Angebote von religiöser Bildung über soziale Unterstützung bis hin zu kulturellen Veranstaltungen, die unsere Gemeinschaft stärken und bereichern.
+                </p>
+                {# GEÄNDERT: Link auf "#" gesetzt, da 'about' Endpoint nicht definiert ist. Bitte definieren Sie '/about' in Ihrer Flask-App, um diesen Link zu aktivieren. #}
+<a href="{{ url_for('gemeinde') }}" class="btn btn-outline-primary btn-lg">
+    <i class="fas fa-info-circle me-2"></i>Mehr über uns & Unsere Gemeinde
+</a>
+            </div>
+        </div>
+
+        <h2 class="text-center mb-4">Aktuelle Nachrichten</h2>
+        <div id="newsCarousel" class="carousel slide section-spacing" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% if latest_posts %}
+                    {% set posts_per_slide = 2 %} {# Anzeigen von zwei Nachrichten pro Slide #}
+                    {% set total_posts = latest_posts|length %}
+                    {% for i in range(0, total_posts, posts_per_slide) %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <div class="row g-4 justify-content-center">
+                                {% for post_index in range(i, i + posts_per_slide) %}
+                                    {% if post_index < total_posts %}
+                                        {% set post = latest_posts[post_index] %}
+                                        <div class="col-md-6">
+                                            <div class="card h-100 news-card">
+                                                {% if post.image %}
+                                                <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="card-img-top" alt="{{ post.title }}">
+                                                {% endif %}
+                                                <div class="card-body d-flex flex-column">
+                                                    <h5 class="card-title">{{ post.title }}</h5>
+                                                    <p class="card-text flex-grow-1">{{ post.content|striptags|truncate(120) }}</p>
+                                                    <a href="{{ url_for('blog_post', post_id=post.id) }}" class="btn btn-primary mt-auto">Weiterlesen</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="carousel-item active">
+                        <div class="text-center p-5">
+                            <h5 class="text-muted">Derzeit keine aktuellen Nachrichten verfügbar.</h5>
+                            <p class="text-muted">Besuchen Sie uns bald wieder für Updates!</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            {% if total_posts > posts_per_slide %}
+            <button class="carousel-control-prev" type="button" data-bs-target="#newsCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#newsCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+            {% endif %}
+            <div class="text-center mt-5">
+                 <a href="{{ url_for('blog') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-newspaper me-2"></i>Alle Nachrichten
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Gebetszeiten
+                </h3>
+                {# Spenden Button hier entfernt, da separater, prominenter Block unten #}
+            </div>
+            <div class="card-body p-4">
+                <form method="GET" action="/">
+                    <div class="mb-4">
+                        <label for="date-selector" class="form-label text-muted fs-6 fw-bold">Datum wählen:</label>
+                        <input type="date" id="date-selector" name="date" class="form-control form-control-lg rounded-pill"
+                               value="{{ today.strftime('%Y-%m-%d') }}" onchange="this.form.submit()">
+                    </div>
+                </form>
+                <p class="mb-4 text-center">
+                    <strong class="me-2">Aktuelle Uhrzeit:</strong>
+                    <span id="current-time" class="badge rounded-pill animate__animated">{{ now.strftime('%H:%M:%S') }}</span>
+                </p>
+                {% if prayer_times.not_available %}
+                <div class="alert alert-info text-center">{{ prayer_times.message }}</div>
+                {% else %}
+                <table class="table prayer-times-table mb-4">
+                    <tbody>
+                        <tr {% if prayer_times.next_prayer == "Fajr" %}class="next-prayer"{% endif %}>
+                            <td>Fajr{% if prayer_times.next_prayer == "Fajr" %} <span class="badge bg-primary text-white ms-2">Nächstes</span>{% endif %}</td>
+                            <td>{{ prayer_times.fajr }}</td>
+                        </tr>
+                        <tr {% if prayer_times.next_prayer == "Sonnenaufgang" %}class="next-prayer"{% endif %}>
+                            <td>Sonnenaufgang{% if prayer_times.next_prayer == "Sonnenaufgang" %} <span class="badge bg-primary text-white ms-2">Nächstes</span>{% endif %}</td>
+                            <td>{{ prayer_times.sunrise }}</td>
+                        </tr>
+                        <tr {% if prayer_times.next_prayer == "Dhuhr" %}class="next-prayer"{% endif %}>
+                            <td>Dhuhr{% if prayer_times.next_prayer == "Dhuhr" %} <span class="badge bg-primary text-white ms-2">Nächstes</span>{% endif %}</td>
+                            <td>{{ prayer_times.dhuhr }}</td>
+                        </tr>
+                        <tr {% if prayer_times.next_prayer == "Asr" %}class="next-prayer"{% endif %}>
+                            <td>Asr{% if prayer_times.next_prayer == "Asr" %} <span class="badge bg-primary text-white ms-2">Nächstes</span>{% endif %}</td>
+                            <td>{{ prayer_times.asr }}</td>
+                        </tr>
+                        <tr {% if prayer_times.next_prayer == "Maghrib" %}class="next-prayer"{% endif %}>
+                            <td>Maghrib{% if prayer_times.next_prayer == "Maghrib" %} <span class="badge bg-primary text-white ms-2">Nächstes</span>{% endif %}</td>
+                            <td>{{ prayer_times.maghrib }}</td>
+                        </tr>
+                        <tr {% if prayer_times.next_prayer == "Isha" %}class="next-prayer"{% endif %}>
+                            <td>Isha{% if prayer_times.next_prayer == "Isha" %} <span class="badge bg-primary text-white ms-2">Nächstes</span>{% endif %}</td>
+                            <td>{{ prayer_times.isha }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% if prayer_times.next_prayer and prayer_times.time_remaining %}
+                <div class="alert alert-primary text-center fw-bold animate__animated animate__fadeIn">
+                    Zeit bis zum nächsten Gebet ({{ prayer_times.next_prayer }}): <br><span class="fs-4">{{ prayer_times.time_remaining }}</span>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <div class="d-grid gap-2 mt-4">
+                    <button id="imsakiyeBtn" class="btn btn-outline-primary" type="button">
+                        <i class="fas fa-file-pdf me-2"></i>İmsakiye PDF generieren
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if upcoming_events %}
+        <div class="card mb-5">
+            <div class="card-body p-4">
+                <h5 class="card-title text-center mb-4">
+                    <i class="fas fa-calendar-alt me-2" style="color: var(--primary-teal);"></i>Kommende Veranstaltungen
+                </h5>
+                <div class="list-group list-group-flush">
+                    {% for event in upcoming_events %}
+                    <div class="list-group-item d-flex flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-between mb-1">
+                            <h6 class="mb-0">{{ event.title }}</h6>
+                            <small class="text-muted text-end">{{ event.event_date.strftime('%d.%m.%Y') }}</small>
+                        </div>
+                        {% if event.event_time %}
+                        <p class="mb-1 small">
+                            <i class="fas fa-clock"></i>{{ event.event_time }} Uhr
+                        </p>
+                        {% endif %}
+                        {% if event.location %}
+                        <small class="text-muted d-block mb-1">
+                            <i class="fas fa-map-marker-alt"></i>{{ event.location }}
+                        </small>
+                        {% endif %}
+                        {% if event.is_recurring %}
+                        <span class="badge bg-primary mt-2">
+                            <i class="fas fa-redo-alt me-1"></i>{{ event.recurrence_type }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('veranstaltungen') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar me-1"></i>Alle Veranstaltungen anzeigen
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card mb-5">
+            <div class="card-body text-center p-5">
+                <p class="lead mb-4">
+                    Ihre Spende macht einen großen Unterschied. Unterstützen Sie die DITIB-Gemeinde Salzgitter Bad bei ihren wichtigen Aufgaben!
+                </p>
+                <a href="https://www.paypal.com/donate?hosted_button_id=XYZ123" target="_blank" class="btn btn-success w-100 animate__animated animate__pulse animate__infinite">
+                    <i class="fas fa-hand-holding-heart me-2"></i>Jetzt Spenden!
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Current time update for Gebetszeiten
+    function updateCurrentTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const currentTimeElement = document.getElementById('current-time');
+        if (currentTimeElement) {
+            currentTimeElement.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+    }
+    setInterval(updateCurrentTime, 1000);
+    updateCurrentTime(); // Call immediately to set on load
+
+    const imsakiyeBtn = document.getElementById('imsakiyeBtn');
+    
+    if (imsakiyeBtn) {
+        imsakiyeBtn.addEventListener('click', showImsakiyeModal);
+    }
+
+    function showImsakiyeModal() {
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.7)'; /* Darker, more prominent overlay */
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.zIndex = '1050'; 
+        modal.style.opacity = '0'; 
+        modal.style.transition = 'opacity 0.3s ease-out';
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content-custom'; /* Apply custom class */
+        modalContent.style.transform = 'translateY(-30px)'; /* Start higher */
+        modalContent.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+
+        const title = document.createElement('h3');
+        title.textContent = 'İmsakiye PDF Oluştur';
+        modalContent.appendChild(title);
+
+        const yearLabel = document.createElement('label');
+        yearLabel.textContent = 'Yıl:';
+        yearLabel.style.display = 'block';
+        yearLabel.style.marginBottom = '10px'; 
+        modalContent.appendChild(yearLabel);
+
+        const yearInput = document.createElement('input');
+        yearInput.type = 'number';
+        yearInput.id = 'year-input';
+        yearInput.value = new Date().getFullYear();
+        modalContent.appendChild(yearInput);
+
+        const monthLabel = document.createElement('label');
+        monthLabel.textContent = 'Ay:';
+        monthLabel.style.display = 'block';
+        monthLabel.style.marginBottom = '10px'; 
+        modalContent.appendChild(monthLabel);
+
+        const monthInput = document.createElement('select');
+        monthInput.id = 'month-input';
+        modalContent.appendChild(monthInput);
+
+        const months = [
+            'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayis', 'Haziran',
+            'Temmuz', 'Agustos', 'Eylül', 'Ekim', 'Kasim', 'Aralık'
+        ];
+
+        months.forEach((month, index) => {
+            const option = document.createElement('option');
+            option.value = index + 1;
+            option.textContent = month;
+            if (index + 1 === new Date().getMonth() + 1) {
+                option.selected = true;
+            }
+            monthInput.appendChild(option);
+        });
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'btn-container';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'İptal';
+        cancelBtn.className = 'btn-cancel';
+        cancelBtn.addEventListener('click', function() {
+            modal.style.opacity = '0';
+            modalContent.style.transform = 'translateY(-30px)';
+            setTimeout(() => document.body.removeChild(modal), 300);
+        });
+        buttonContainer.appendChild(cancelBtn);
+
+        const generateBtn = document.createElement('button');
+        generateBtn.textContent = 'Oluştur';
+        generateBtn.className = 'btn-generate';
+        generateBtn.addEventListener('click', async function() {
+            const year = parseInt(yearInput.value);
+            const month = parseInt(monthInput.value);
+            
+            if (isNaN(year)) {
+                alert('Lütfen geçerli bir yıl girin!');
+                return;
+            }
+            
+            if (month < 1 || month > 12) {
+                alert('Lütfen geçerli bir ay seçin!');
+                return;
+                }
+            
+            modal.style.opacity = '0';
+            modalContent.style.transform = 'translateY(-30px)';
+            setTimeout(async () => {
+                document.body.removeChild(modal);
+                await generateImsakiyePDF(month, year);
+            }, 300);
+        });
+        buttonContainer.appendChild(generateBtn);
+
+        modalContent.appendChild(buttonContainer);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Animate modal in
+        setTimeout(() => {
+            modal.style.opacity = '1';
+            modalContent.style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    async function loadPrayerTimesForMonth(year, month) {
+        try {
+            const response = await fetch('/static/gb.txt');
+            if (!response.ok) {
+                throw new Error('gb.txt konnte nicht geladen werden');
+            }
+            
+            const text = await response.text();
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            
+            if (lines.length === 0) {
+                throw new Error('gb.txt ist leer oder enthält nur Leerzeilen');
+            }
+
+            const prayerTimes = [];
+            const dateRegex = /^\d{4}-\d{2}-\d{2}/; 
+
+            for (const line of lines) {
+                if (!dateRegex.test(line)) continue;
+
+                const parts = line.trim().split(/\s+/);
+                
+                if (parts.length >= 7) {
+                    const dateStr = parts[0];
+                    const date = new Date(dateStr);
+                    
+                    if (isNaN(date.getTime())) continue; 
+                    
+                    const fileYear = date.getFullYear();
+                    const fileMonth = date.getMonth() + 1;
+                    
+                    if (fileYear === year && fileMonth === month) {
+                        prayerTimes.push({
+                            date: dateStr,
+                            day: date.getDate(),
+                            fajr: parts[1],
+                            sunrise: parts[2],
+                            dhuhr: parts[3],
+                            asr: parts[4],
+                            maghrib: parts[5],
+                            isha: parts[6]
+                        });
+                    }
+                }
+            }
+
+            if (prayerTimes.length === 0) {
+                console.warn(`Keine Gebetszeiten gefunden für ${month}/${year}`);
+            }
+            
+            return prayerTimes;
+        } catch (err) {
+            console.error('Fehler beim Laden der Gebetszeiten:', err);
+            throw err;
+        }
+    }
+
+    async function generateImsakiyePDF(month, year) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        doc.setFillColor(0, 51, 102); 
+        doc.rect(0, 0, pageWidth, 24, 'F');
+        doc.setFillColor(255,255,255);
+        doc.rect(0, 24, pageWidth, 8, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.setTextColor(255,255,255);
+        doc.text('DITIB-Gemeinde Salzgitter Bad', pageWidth/2, 14, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setTextColor(0, 51, 102);
+        doc.text(
+            ` Miladi ${year} ${['','Ocak','Şubat','Mart','Nisan','Mayis','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][month]}`,
+            pageWidth/2, 30, { align: 'center' }
+        );
+
+        let sponsorLogos = [];
+        try {
+            sponsorLogos = await loadSponsorLogos();
+        } catch (error) {
+            console.warn('Sponsoren-Logos konnten nicht geladen werden:', error);
+        }
+
+        const sponsorAreaHeight = 50;
+        const availableTableHeight = pageHeight - 40 - 20 - sponsorAreaHeight; 
+
+        const prayerTimes = await loadPrayerTimesForMonth(year, month);
+        if (!prayerTimes || prayerTimes.length === 0) {
+            alert('Bu ay için namaz vakitleri bulunamadı.');
+            return;
+        }
+
+        const tableTop = 40;
+        const colWidths = [20, 15, 15, 15, 15, 15, 15, 15];
+
+        doc.autoTable({
+            head: [['Tarih', 'Gün', 'Imsak', 'Günes', 'Ögle', 'Ikindi', 'Aksam', 'Yats']],
+            body: prayerTimes.map(pt => {
+                const date = new Date(pt.date);
+                const weekdays = ['Pz', 'Pzt', 'Sali', 'Çars', 'Pers', 'Cuma', 'Cmt'];
+                const dayName = weekdays[date.getDay()];
+                return [
+                    `${date.getDate()} ${['','Ocak','Şubat','Mart','Nisan','Mayis','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][month]}`,
+                    dayName,
+                    pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha
+                ];
+            }),
+            startY: tableTop,
+            margin: { left: 14, right: 14 },
+            styles: { 
+                fontSize: 8.5,
+                halign: 'center',
+                cellPadding: 1,
+                textColor: [20, 20, 20],
+                lineColor: [200, 200, 200],
+                lineWidth: 0.2,
+                font: 'helvetica'
+            },
+            headStyles: {
+                fillColor: [0, 51, 102],
+                textColor: [255,255,255],
+                fontStyle: 'bold'
+            },
+            columnStyles: {
+                0: { cellWidth: colWidths[0] },
+                1: { cellWidth: colWidths[1] },
+                2: { cellWidth: colWidths[2] },
+                3: { cellWidth: colWidths[3] },
+                4: { cellWidth: colWidths[4] },
+                5: { cellWidth: colWidths[5] },
+                6: { cellWidth: colWidths[6] },
+                7: { cellWidth: colWidths[7] }
+            },
+            alternateRowStyles: { fillColor: [240, 245, 255] },
+            theme: 'grid',
+            maxBodyHeight: availableTableHeight
+        });
+
+        if (sponsorLogos.length > 0) {
+            await addSponsorLogos(doc, sponsorLogos, pageWidth, pageHeight);
+        }
+
+        doc.save(`DITIB_Imsakiye_${month}_${year}.pdf`);
+    }
+
+    async function loadSponsorLogos() {
+        try {
+            let logoFiles = [];
+            
+            try {
+                const response = await fetch('/static/sponsoren/logos.php');
+                if (response.ok) {
+                    logoFiles = await response.json();
+                }
+            } catch (e) {
+                console.log('PHP-Script nicht verfügbar, verwende automatische Erkennung');
+            }
+            
+            if (logoFiles.length === 0) {
+                const imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+                const commonNames = [
+                    'logo', 'logo1', 'logo2', 'logo3', 'logo4', 'logo5', 'logo6', 'logo7', 'logo8', 'logo9', 'logo10',
+                    'sponsor', 'sponsor1', 'sponsor2', 'sponsor3', 'sponsor4', 'sponsor5', 'sponsor6', 'sponsor7', 'sponsor8',
+                    'firma', 'firma1', 'firma2', 'firma3', 'firma4', 'firma5',
+                    'unternehmen', 'unternehmen1', 'unternehmen2', 'unternehmen3',
+                    'partner', 'partner1', 'partner2', 'partner3', 'partner4',
+                    'company', 'company1', 'company2', 'company3',
+                    'business', 'business1', 'business2',
+                    'brand', 'brand1', 'brand2', 'brand3'
+                ];
+                
+                for (const name of commonNames) {
+                    for (const ext of imageExtensions) {
+                        const filename = `${name}.${ext}`;
+                        try {
+                            const testResponse = await fetch(`/static/sponsoren/${filename}`, { method: 'HEAD' });
+                            if (testResponse.ok) {
+                                logoFiles.push(filename);
+                            }
+                        } catch (e) {
+                            
+                        }
+                    }
+                }
+                
+                for (let i = 1; i <= 20; i++) {
+                    for (const ext of imageExtensions) {
+                        const filename = `${i}.${ext}`;
+                        try {
+                            const testResponse = await fetch(`/static/sponsoren/${filename}`, { method: 'HEAD' });
+                            if (testResponse.ok) {
+                                logoFiles.push(filename);
+                            }
+                        } catch (e) {
+                            
+                        }
+                    }
+                }
+            }
+            
+            logoFiles = [...new Set(logoFiles)].sort();
+            
+            console.log(`Gefundene Logo-Dateien: ${logoFiles.length}`, logoFiles);
+            
+            const logos = [];
+            for (const filename of logoFiles) {
+                try {
+                    const imageData = await loadImageAsBase64(`/static/sponsoren/${filename}`);
+                    const imageType = getImageType(filename);
+                    logos.push({
+                        filename: filename,
+                        data: imageData,
+                        type: imageType
+                    });
+                    console.log(`Logo erfolgreich geladen: ${filename}`);
+                } catch (error) {
+                    console.warn(`Logo ${filename} konnte nicht geladen werden:`, error);
+                }
+            }
+            
+            return logos;
+        } catch (error) {
+            console.error('Fehler beim Laden der Sponsoren-Logos:', error);
+            return [];
+        }
+    }
+
+    function getImageType(filename) {
+        const ext = filename.toLowerCase().split('.').pop();
+        switch (ext) {
+            case 'jpg':
+            case 'jpeg':
+                return 'JPEG';
+            case 'png':
+                return 'PNG';
+            case 'gif':
+                return 'GIF';
+            case 'webp':
+                return 'WEBP';
+            case 'svg':
+                return 'SVG';
+            default:
+                return 'PNG'; 
+        }
+    }
+
+    async function addSponsorLogos(doc, logos, pageWidth, pageHeight) {
+        if (logos.length === 0) return;
+        
+        const sponsorAreaTop = pageHeight - 55; 
+        const sponsorAreaHeight = 45; 
+        const margin = 10; 
+        const availableWidth = pageWidth - (2 * margin);
+        
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(margin, sponsorAreaTop - 5, pageWidth - margin, sponsorAreaTop - 5);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 51, 102);
+        doc.text('Unsere Sponsoren', pageWidth/2, sponsorAreaTop, { align: 'center' });
+        
+        let maxLogosPerRow, logoWidth, logoHeight;
+        
+        if (logos.length <= 3) {
+            maxLogosPerRow = logos.length;
+            logoWidth = Math.min(50, availableWidth / maxLogosPerRow - 10);
+            logoHeight = 25;
+        } else if (logos.length <= 6) {
+            maxLogosPerRow = 3;
+            logoWidth = Math.min(45, availableWidth / maxLogosPerRow - 8);
+            logoHeight = 22;
+        } else if (logos.length <= 12) {
+            maxLogosPerRow = 4;
+            logoWidth = Math.min(40, availableWidth / maxLogosPerRow - 6);
+            logoHeight = 20;
+        } else {
+            maxLogosPerRow = 5;
+            logoWidth = Math.min(35, availableWidth / maxLogosPerRow - 4);
+            logoHeight = 18;
+        }
+        
+        const maxRows = Math.min(3, Math.ceil(logos.length / maxLogosPerRow)); 
+        const rowSpacing = sponsorAreaHeight / (maxRows + 1); 
+        
+        let logoIndex = 0;
+        
+        for (let row = 0; row < maxRows && logoIndex < logos.length; row++) {
+            const logosInThisRow = Math.min(maxLogosPerRow, logos.length - logoIndex);
+            const totalRowWidth = logosInThisRow * logoWidth + (logosInThisRow - 1) * 5;
+            const startX = (pageWidth - totalRowWidth) / 2;
+            const logoY = sponsorAreaTop + 8 + (row * rowSpacing);
+            
+            for (let col = 0; col < logosInThisRow && logoIndex < logos.length; col++) {
+                const logo = logos[logoIndex];
+                const logoX = startX + (col * (logoWidth + 5));
+                
+                try {
+                    doc.addImage(
+                        logo.data,
+                        logo.type || 'PNG', 
+                        logoX,
+                        logoY,
+                        logoWidth,
+                        logoHeight,
+                        undefined,
+                        'MEDIUM'
+                    );
+                } catch (error) {
+                    console.warn(`Fehler beim Hinzufügen des Logos ${logo.filename}:`, error);
+                    
+                    try {
+                        const fallbackType = logo.type === 'PNG' ? 'JPEG' : 'PNG';
+                        doc.addImage(
+                            logo.data,
+                            fallbackType,
+                            logoX,
+                            logoY,
+                            logoWidth,
+                            logoHeight,
+                            undefined,
+                            'MEDIUM'
+                        );
+                    } catch (fallbackError) {
+                        doc.setDrawColor(200, 200, 200);
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(logoX, logoY, logoWidth, logoHeight, 'FD');
+                        
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(Math.min(8, logoWidth / 6));
+                        doc.setTextColor(100, 100, 100);
+                        const logoName = logo.filename.replace(/\.(png|jpg|jpeg|gif|webp|svg)$/i, '');
+                        const displayName = logoName.length > 15 ? logoName.substring(0, 12) + '...' : logoName;
+                        doc.text(displayName, logoX + logoWidth/2, logoY + logoHeight/2 + 2, { 
+                            align: 'center',
+                            maxWidth: logoWidth - 4
+                        });
+                    }
+                }
+                
+                logoIndex++;
+            }
+        }
+        
+        if (logos.length > (maxLogosPerRow * maxRows)) {
+            const notShown = logos.length - (maxLogosPerRow * maxRows);
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7);
+            doc.setTextColor(120, 120, 120);
+            doc.text(
+                `und ${notShown} weitere ${notShown === 1 ? 'Sponsor' : 'Sponsoren'}`,
+                pageWidth/2,
+                pageHeight - 8,
+                { align: 'center' }
+            );
+        }
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            'Herzlichen Dank an alle unsere Sponsoren für ihre Unterstützung!',
+            pageWidth/2,
+            pageHeight - 3,
+            { align: 'center' }
+        );
+    }
+
+    async function loadImageAsBase64(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const blob = await response.blob();
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error(`Fehler beim Laden des Bildes ${url}:`, error);
+            throw error;
+        }
+    }
+});
+</script>
+{% endblock %}

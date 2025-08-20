@@ -1,0 +1,162 @@
+<div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTransactionModalLabel">Transaktion bearbeiten</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTransactionForm" method="POST" action="{{ url_for('admin_finanzen_edit', transaction_id=transaction.id) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="editDate" class="form-label">Datum*</label>
+                            <input type="date" class="form-control" id="editDate" name="date" 
+                                   value="{{ transaction.date.strftime('%Y-%m-%d') if transaction.date else '' }}" required>
+                        </div>
+                        
+                        <div class="col-md-5">
+                            <label for="editDescription" class="form-label">Beschreibung*</label>
+                            <input type="text" class="form-control" id="editDescription" name="description" 
+                                   value="{{ transaction.description }}" required>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="editAmount" class="form-label">Betrag (€)*</label>
+                            <input type="number" step="0.01" class="form-control" id="editAmount" name="amount" 
+                                   value="{{ '%.2f'|format(transaction.amount) if transaction.amount else '' }}" 
+                                   {{ 'required' if transaction.type != 'note' else 'disabled' }}>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="editType" class="form-label">Typ*</label>
+                            <select class="form-select" id="editType" name="type" required>
+                                <option value="Einnahme" {% if transaction.type == 'Einnahme' %}selected{% endif %}>Einnahme</option>
+                                <option value="Ausgabe" {% if transaction.type == 'Ausgabe' %}selected{% endif %}>Ausgabe</option>
+                                <option value="note" {% if transaction.type == 'note' %}selected{% endif %}>Notiz</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="editCostCenter" class="form-label">Kostenstelle</label>
+                            <select class="form-select" id="editCostCenter" name="cost_center_id">
+                                <option value="">Keine ausgewählt</option>
+                                {% for cc in cost_centers %}
+                                <option value="{{ cc.id }}" {% if transaction.cost_center_id == cc.id %}selected{% endif %}>
+                                    {{ cc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="editProcess" class="form-label">Vorgang</label>
+                            <select class="form-select" id="editProcess" name="process_id">
+                                <option value="">Keiner ausgewählt</option>
+                                {% for p in processes %}
+                                <option value="{{ p.id }}" {% if transaction.process_id == p.id %}selected{% endif %}>
+                                    {{ p.name }} ({{ p.cost_center.name }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="editDocument" class="form-label">Beleg</label>
+                            <input type="file" class="form-control" id="editDocument" name="document">
+                            {% if transaction.document_filename %}
+                            <small class="text-muted">
+                                Aktuelles Dokument: <a href="{{ url_for('static', filename='Uploads/' + transaction.document_filename) }}" target="_blank">
+                                    {{ transaction.document_filename }}
+                                </a>
+                            </small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editIsApproved" name="is_approved" 
+                                       {% if transaction.is_approved %}checked{% endif %}>
+                                <label class="form-check-label" for="editIsApproved">
+                                    Genehmigt
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer mt-3">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                        <button type="submit" class="btn btn-primary">Speichern</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // For the new transaction modal (if present in admin_finanzen.html)
+    const newTransactionCostCenterSelect = document.getElementById('newCostCenterId'); // Assuming ID for new transaction
+    const newTransactionProcessSelect = document.getElementById('newProcessId'); // Assuming ID for new transaction
+
+    if (newTransactionCostCenterSelect && newTransactionProcessSelect) {
+        newTransactionCostCenterSelect.addEventListener('change', function() {
+            const costCenterId = this.value;
+            // Clear existing options except the first one ("Keiner")
+            while (newTransactionProcessSelect.options.length > 1) {
+                newTransactionProcessSelect.remove(1);
+            }
+            if (costCenterId) {
+                fetch(`/admin/cost_centers/${costCenterId}/processes.json`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.processes.forEach(process => {
+                            const option = new Option(process.name, process.id);
+                            newTransactionProcessSelect.add(option);
+                        });
+                    });
+            }
+        });
+    }
+
+    // Existing logic for editTransactionModal (from transaction_edit.html)
+    const editCostCenterSelect = document.getElementById('editCostCenter');
+    const editProcessSelect = document.getElementById('editProcess');
+
+    if (editCostCenterSelect && editProcessSelect) {
+        editCostCenterSelect.addEventListener('change', function() {
+            const costCenterId = this.value;
+            while (editProcessSelect.options.length > 1) {
+                editProcessSelect.remove(1);
+            }
+            if (costCenterId) {
+                fetch(`/admin/cost_centers/${costCenterId}/processes.json`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.processes.forEach(process => {
+                            const option = new Option(process.name, process.id);
+                            editProcessSelect.add(option);
+                        });
+                    });
+            }
+        });
+    }
+    // ... (rest of your existing JS)
+});
+    
+    // Enable/disable amount field based on transaction type
+    document.getElementById('editType').addEventListener('change', function() {
+        const amountField = document.getElementById('editAmount');
+        if (this.value === 'note') {
+            amountField.disabled = true;
+            amountField.removeAttribute('required');
+            amountField.value = '';
+        } else {
+            amountField.disabled = false;
+            amountField.setAttribute('required', 'required');
+        }
+    });
+});
+</script>

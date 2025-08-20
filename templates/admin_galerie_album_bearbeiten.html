@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Album bearbeiten{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-edit me-2"></i>Album bearbeiten</h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-info me-2">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+            <a href="{{ url_for('admin_galerie') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-images me-1"></i>Alle Alben
+            </a>
+            <a href="{{ url_for('admin_galerie_album', album_id=album.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Zurück zum Album
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Album "{{ album.name }}" bearbeiten</h4>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_galerie_album_bearbeiten', album_id=album.id) }}" method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="album_name" class="form-label">Album Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="album_name" name="album_name" value="{{ album.name }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="album_beschreibung" class="form-label">Beschreibung</label>
+                        <input type="text" class="form-control" id="album_beschreibung" name="album_beschreibung" value="{{ album.beschreibung or '' }}">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteAlbum({{ album.id }}, '{{ album.name }}')">
+                        <i class="fas fa-trash-alt me-1"></i>Album löschen
+                    </button>
+                    <div>
+                        <a href="{{ url_for('admin_galerie_album', album_id=album.id) }}" class="btn btn-secondary me-2">Abbrechen</a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-1"></i>Änderungen speichern
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Album-Informationen</h4>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Erstellungsdatum:</dt>
+                    <dd class="col-sm-9">{{ album.erstellungsdatum.strftime('%d.%m.%Y, %H:%M') }}</dd>
+                    
+                    <dt class="col-sm-3">Anzahl Bilder:</dt>
+                    <dd class="col-sm-9">{{ album.bilder|length }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Album löschen Modal -->
+<div class="modal fade" id="deleteAlbumModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Album löschen
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sind Sie sicher, dass Sie das Album <strong id="deleteAlbumName"></strong> löschen möchten?</p>
+                <p class="text-danger">Diese Aktion kann nicht rückgängig gemacht werden! Alle Bilder in diesem Album werden ebenfalls gelöscht.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form id="deleteAlbumForm" method="POST">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i>Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDeleteAlbum(id, name) {
+    document.getElementById('deleteAlbumName').textContent = name;
+    document.getElementById('deleteAlbumForm').action = "{{ url_for('admin_galerie_album_loeschen', album_id=0) }}".replace("0", id);
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteAlbumModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

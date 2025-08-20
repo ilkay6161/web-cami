@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eintrag bearbeiten - DITIB Salzgitter Bad</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+<body>
+    <div class="container py-5">
+        <h2>Eintrag bearbeiten</h2>
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="passwort" value="{{ passwort }}">
+            <div class="mb-3">
+                <label class="form-label">Passwort</label>
+                <input type="password" name="passwort" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input type="text" name="name" class="form-control" value="{{ eintrag.name }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Geburtsdatum</label>
+                <input type="date" name="birth_date" class="form-control" value="{{ eintrag.birth_date }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Todestag</label>
+                <input type="date" name="death_date" class="form-control" value="{{ eintrag.death_date }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Bild</label>
+                {% if eintrag.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + eintrag.image_filename) }}" class="img-fluid mb-2" style="max-height:200px;">
+                {% endif %}
+                <input type="file" name="image" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

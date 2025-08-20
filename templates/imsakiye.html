@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>İmsakiye PDF</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <style>
+[
+  {
+    "date": "2025-05-01",
+    "fajr": "03:50",
+    "sunrise": "05:42",
+    "dhuhr": "13:21",
+    "asr": "17:23",
+    "maghrib": "20:50",
+    "isha": "22:30"
+  },
+  {
+    "date": "2025-05-02",
+    "fajr": "03:49",
+    "sunrise": "05:40",
+    "dhuhr": "13:21",
+    "asr": "17:24",
+    "maghrib": "20:52",
+    "isha": "22:31"
+  },
+  {
+    "date": "2025-05-03",
+    "fajr": "03:48",
+    "sunrise": "05:38",
+    "dhuhr": "13:21",
+    "asr": "17:24",
+    "maghrib": "20:53",
+    "isha": "22:31"
+  },
+  {
+    "date": "2025-05-04",
+    "fajr": "03:48",
+    "sunrise": "05:36",
+    "dhuhr": "13:21",
+    "asr": "17:25",
+    "maghrib": "20:55",
+    "isha": "22:32"
+  },
+  {
+    "date": "2025-05-05",
+    "fajr": "03:47",
+    "sunrise": "05:34",
+    "dhuhr": "13:20",
+    "asr": "17:26",
+    "maghrib": "20:57",
+    "isha": "22:33"
+  }
+]
+  </style>
+</head>
+<body>
+
+<h2>Mayıs 2025 İmsakiye – Salzgitter DITIB</h2>
+<button onclick="generateSimpleImsakiyePDF()">PDF Oluştur</button>
+
+<script>
+  async function generateSimpleImsakiyePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const month = "Mayıs";
+    const year = "2025";
+
+    const prayerTimes = [
+        ["1 May Per", "03:50", "05:42", "13:21", "17:23", "20:50", "22:30"],
+        ["2 May Cum", "03:49", "05:40", "13:21", "17:24", "20:52", "22:31"],
+        ["3 May Cmt", "03:48", "05:38", "13:21", "17:24", "20:53", "22:31"],
+        ["4 May Paz", "03:48", "05:36", "13:21", "17:25", "20:55", "22:32"],
+        ["5 May Pzt", "03:47", "05:34", "13:20", "17:26", "20:57", "22:33"],
+        ["6 May Sal", "03:46", "05:32", "13:20", "17:26", "20:58", "22:33"],
+        ["7 May Çar", "03:46", "05:30", "13:20", "17:27", "21:00", "22:34"],
+        ["8 May Per", "03:45", "05:29", "13:20", "17:28", "21:02", "22:35"]
+        // ... Diğer günleri ekleyebilirsin
+    ];
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(`${month} ${year} İmsakiyesi`, pageWidth / 2, 20, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.text("Salzgitter DITIB Camii – Namaz Vakitleri", pageWidth / 2, 27, { align: "center" });
+
+    doc.autoTable({
+      startY: 35,
+      head: [["Tarih", "İmsak", "Güneş", "Öğle", "İkindi", "Akşam", "Yatsı"]],
+      body: prayerTimes,
+      styles: {
+        fontSize: 9,
+        halign: "center",
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [100, 100, 100],
+        textColor: [255, 255, 255],
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+      margin: { left: 10, right: 10 },
+      tableWidth: "auto",
+      theme: "grid",
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Oluşturma tarihi: ${new Date().toLocaleDateString("tr-TR")}`, pageWidth / 2, finalY, { align: "center" });
+    doc.text("Salzgitter DITIB Camii – www.ditib-sz.de", pageWidth / 2, finalY + 5, { align: "center" });
+
+    doc.save(`Imsakiye_${month}_${year}.pdf`);
+  }
+</script>
+
+</body>
+</html>
+

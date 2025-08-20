@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ album.name }} - Galerie{% endblock %}
+
+{% block header %}{{ album.name }}{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h2 class="card-title mb-0">{{ album.name }}</h2>
+        <a href="{{ url_for('galarie') }}" class="btn btn-outline-light">
+            <i class="fas fa-arrow-left me-2"></i>Zurück zur Galerie
+        </a>
+    </div>
+    <div class="card-body">
+        {% if album.beschreibung %}
+            <p class="lead mb-4">{{ album.beschreibung }}</p>
+        {% endif %}
+        
+        {% if bilder %}
+            <div class="row">
+                {% for bild in bilder %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <a href="{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}" 
+                           data-bs-toggle="modal" data-bs-target="#imageModal" 
+                           data-image="{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}"
+                           data-title="{{ bild.titel or 'Bild' }}">
+                            <img src="{{ url_for('static', filename='uploads/galerie/' + bild.dateiname) }}" 
+                                 class="card-img-top" alt="{{ bild.titel or 'Bild' }}" 
+                                 style="height: 200px; object-fit: cover;">
+                        </a>
+                        <div class="card-body">
+                            {% if bild.titel %}
+                                <h5 class="card-title">{{ bild.titel }}</h5>
+                            {% endif %}
+                            {% if bild.beschreibung %}
+                                <p class="card-text">{{ bild.beschreibung }}</p>
+                            {% endif %}
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i>{{ bild.upload_datum.strftime('%d.%m.%Y') }}
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>Dieses Album enthält noch keine Bilder.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bild-Modal für Großansicht -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Bildansicht</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" id="modalImage" class="img-fluid" alt="Großansicht">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal-Bild dynamisch setzen
+    var imageModal = document.getElementById('imageModal');
+    if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', function(event) {
+            var button = event.relatedTarget;
+            var imageUrl = button.getAttribute('data-image');
+            var imageTitle = button.getAttribute('data-title');
+            
+            var modalImage = document.getElementById('modalImage');
+            var modalTitle = document.getElementById('imageModalLabel');
+            
+            if (modalImage) modalImage.src = imageUrl;
+            if (modalTitle) modalTitle.textContent = imageTitle;
+        });
+    }
+});
+</script>
+{% endblock %}

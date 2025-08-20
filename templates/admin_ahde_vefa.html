@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Ahde Vefa Verwaltung{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-users me-2"></i>Ahde Vefa Verwaltung</h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-info me-2">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+            <a href="{{ url_for('ahde_vefa_view') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-eye me-1"></i>Öffentliche Ansicht
+            </a>
+            <a href="{{ url_for('blog_admin_logout') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-sign-out-alt me-1"></i>Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-list me-2"></i>Alle Einträge</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Geburtsdatum</th>
+                            <th>Todesdatum</th>
+                            <th>Bild</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eintrag in eintraege %}
+                        <tr>
+                            <td>{{ eintrag.id }}</td>
+                            <td>{{ eintrag.name }}</td>
+                            <td>{{ eintrag.birth_date or "Nicht angegeben" }}</td>
+                            <td>{{ eintrag.death_date or "Nicht angegeben" }}</td>
+                            <td>
+                                {% if eintrag.image_filename %}
+                                <img src="{{ url_for('static', filename='uploads/' + eintrag.image_filename) }}" 
+                                     class="img-thumbnail" style="max-height: 50px;">
+                                {% else %}
+                                <span class="text-muted">Kein Bild</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('bearbeite_eintrag', eintrag_id=eintrag.id) }}" 
+                                   class="btn btn-sm btn-warning me-1">
+                                    <i class="fas fa-edit"></i> Bearbeiten
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        onclick="confirmDelete({{ eintrag.id }}, '{{ eintrag.name }}')">
+                                    <i class="fas fa-trash-alt"></i> Löschen
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Neuen Eintrag hinzufügen</h4>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('ahde_vefa_view') }}" method="POST" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="birth_date" class="form-label">Geburtsdatum</label>
+                        <input type="date" class="form-control" id="birth_date" name="birth_date">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="death_date" class="form-label">Todesdatum</label>
+                        <input type="date" class="form-control" id="death_date" name="death_date">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="image" class="form-label">Bild</label>
+                        <input type="file" class="form-control" id="image" name="image">
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>Eintrag speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Eintrag löschen
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sind Sie sicher, dass Sie den Eintrag <strong id="deleteEintragName"></strong> löschen möchten?</p>
+                <p class="text-danger">Diese Aktion kann nicht rückgängig gemacht werden!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form id="deleteForm" method="POST">
+                    <input type="hidden" name="aktion" value="loeschen">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(id, name) {
+    document.getElementById('deleteEintragName').textContent = name;
+    document.getElementById('deleteForm').action = "/bearbeite_eintrag/" + id;
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Veranstaltungen - DITIB Salzgitter Bad{% endblock %}
+
+{% block header %}Kommende Veranstaltungen{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Kommende Veranstaltungen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if veranstaltungen %}
+                    <div class="row">
+                        {% for event in veranstaltungen %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">{{ event.title }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <i class="fas fa-calendar text-primary me-2"></i>
+                                        <strong>{{ event.event_date.strftime('%d.%m.%Y') }}</strong>
+                                    </div>
+                                    
+                                    {% if event.event_time %}
+                                    <div class="mb-2">
+                                        <i class="fas fa-clock text-success me-2"></i>
+                                        {{ event.event_time }} Uhr
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if event.location %}
+                                    <div class="mb-2">
+                                        <i class="fas fa-map-marker-alt text-warning me-2"></i>
+                                        {{ event.location }}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if event.description %}
+                                    <div class="mb-2">
+                                        <small class="text-muted">{{ event.description }}</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if event.is_recurring %}
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-repeat me-1"></i>{{ event.recurrence_type }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <h4><i class="fas fa-calendar-plus me-2"></i>Keine kommenden Veranstaltungen</h4>
+                        <p>Derzeit sind keine Veranstaltungen geplant. Schauen Sie bald wieder vorbei!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

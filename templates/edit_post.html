@@ -1,0 +1,61 @@
+
+{% extends "base.html" %}
+{% block title %}Beitrag bearbeiten{% endblock %}
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-edit me-2"></i>Beitrag bearbeiten</h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-info me-2">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+            <a href="{{ url_for('blog') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Zurück zum Blog
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Beitrag bearbeiten: {{ post.title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Titel</label>
+                    <input type="text" name="title" id="title" class="form-control" value="{{ post.title }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="content" class="form-label">Inhalt</label>
+                    <textarea id="content" name="content" class="form-control rich-editor" rows="12">{{ post.content }}</textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Aktuelles Bild</label>
+                    <div class="border p-3 rounded mb-3">
+                        {% if post.image %}
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename='uploads/blog/' + post.image) }}" alt="Current Image" class="img-thumbnail mb-2" style="max-height: 200px;">
+                                <p class="mb-0 text-muted small">Dateiname: {{ post.image }}</p>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">Kein Bild vorhanden.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <label for="new_image" class="form-label">Neues Bild hochladen (optional)</label>
+                    <input type="file" name="image" id="new_image" class="form-control">
+                    <div class="form-text">Lassen Sie dieses Feld leer, wenn Sie das aktuelle Bild behalten möchten.</div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('blog') }}" class="btn btn-outline-secondary me-2">Abbrechen</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Aktualisieren
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Virtuelles Klassenbuch - {{ klasse.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('virtuelles_klassenbuch') }}">Klassenbuch</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ klasse.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-book-open me-2"></i>{{ klasse.name }} 
+                <span class="badge bg-secondary">{{ klasse.schuljahr }}</span>
+            </h2>
+            <p class="text-muted mb-0">Klassen-ID: {{ klasse.id }}</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary me-2" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Drucken
+            </button>
+            <a href="{{ url_for('klassenbuch_pdf', klasse_id=klasse.id) }}" class="btn btn-outline-success me-2">
+                <i class="fas fa-file-pdf me-1"></i> PDF
+            </a>
+            <a href="{{ url_for('virtuelles_klassenbuch') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Zurück
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-4">
+                    <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Schüler Section -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h3 class="h5 mb-0">
+                <i class="fas fa-users me-2"></i>Schülerliste
+                <span class="badge bg-white text-primary ms-2">{{ schueler|length }}</span>
+            </h3>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addSchuelerModal">
+                <i class="fas fa-user-plus me-1"></i> Neu
+            </button>
+        </div>
+        <div class="card-body">
+            {% if schueler %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Geburtsdatum</th>
+                                <th>Geschlecht</th>
+                                <th class="text-end">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in schueler %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ s.nachname }}, {{ s.name }}</strong>
+                                    </td>
+                                    <td>{{ s.geburtsdatum.strftime('%d.%m.%Y') if s.geburtsdatum else '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ {'m': 'info', 'w': 'danger', 'd': 'secondary'}.get(s.geschlecht, 'light') }}">
+                                            {{ {'m': 'Männlich', 'w': 'Weiblich', 'd': 'Divers'}.get(s.geschlecht, '-') }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary edit-schueler" 
+                                                data-bs-toggle="modal" data-bs-target="#editSchuelerModal"
+                                                data-id="{{ s.id }}" 
+                                                data-name="{{ s.name }}" 
+                                                data-nachname="{{ s.nachname }}"
+                                                data-geburtsdatum="{{ s.geburtsdatum.strftime('%Y-%m-%d') if s.geburtsdatum else '' }}"
+                                                data-geschlecht="{{ s.geschlecht|default('') }}">
+                                            <i class="fas fa-edit"></i> Bearbeiten
+                                        </button>
+                                        <a href="{{ url_for('schueler_bearbeiten', schueler_id=s.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Keine Schüler vorhanden</h5>
+                    <p class="text-muted">Fügen Sie Schüler hinzu, um mit der Verwaltung zu beginnen.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSchuelerModal">
+                        <i class="fas fa-user-plus me-1"></i> Schüler hinzufügen
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Unterrichtseinheiten Section -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h3 class="h5 mb-0">
+                <i class="fas fa-chalkboard-teacher me-2"></i>Unterrichtseinheiten
+                <span class="badge bg-white text-success ms-2">{{ unterrichtseinheiten|length }}</span>
+            </h3>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addUeModal">
+                <i class="fas fa-plus me-1"></i> Neu
+            </button>
+        </div>
+        <div class="card-body">
+            {% if unterrichtseinheiten %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Datum</th>
+                                <th>Stunden</th>
+                                <th>Thema</th>
+                                <th>Status</th>
+                                <th class="text-end">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ue in unterrichtseinheiten %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ ue.datum.strftime('%d.%m.%Y') }}</strong>
+                                    </td>
+                                    <td>{{ ue.stunden }}</td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;" 
+                                             data-bs-toggle="tooltip" title="{{ ue.thema }}">
+                                            {{ ue.thema }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if ue.completed else 'warning' }}">
+                                            {{ 'Abgeschlossen' if ue.completed else 'Geplant' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('anwesenheit_verwalten', unterricht_id=ue.id) }}" 
+                                           class="btn btn-sm btn-outline-info me-1">
+                                            <i class="fas fa-list-check"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-primary edit-ue me-1" 
+                                                data-bs-toggle="modal" data-bs-target="#editUeModal"
+                                                data-id="{{ ue.id }}" 
+                                                data-datum="{{ ue.datum.strftime('%Y-%m-%d') }}"
+                                                data-stunden="{{ ue.stunden }}" 
+                                                data-thema="{{ ue.thema }}"
+                                                data-inhalte="{{ ue.inhalte|default('') }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="{{ url_for('unterricht_einheit', unterricht_id=ue.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Keine Unterrichtseinheiten</h5>
+                    <p class="text-muted">Fügen Sie Unterrichtseinheiten hinzu, um den Unterricht zu dokumentieren.</p>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUeModal">
+                        <i class="fas fa-plus me-1"></i> Unterrichtseinheit hinzufügen
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Include Modals (same as before but with improved styling) -->
+{% include 'modals/add_schueler_modal.html' %}
+{% include 'modals/edit_schueler_modal.html' %}
+{% include 'modals/add_ue_modal.html' %}
+{% include 'modals/edit_ue_modal.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enable tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Edit student modal handler
+    document.querySelectorAll('.edit-schueler').forEach(button => {
+        button.addEventListener('click', function() {
+            const modal = document.querySelector('#editSchuelerModal');
+            modal.querySelector('#editSchuelerId').value = this.dataset.id;
+            modal.querySelector('#editName').value = this.dataset.name;
+            modal.querySelector('#editNachname').value = this.dataset.nachname;
+            modal.querySelector('#editGeburtsdatum').value = this.dataset.geburtsdatum;
+            modal.querySelector('#editGeschlecht').value = this.dataset.geschlecht;
+        });
+    });
+
+    // Edit lesson modal handler
+    document.querySelectorAll('.edit-ue').forEach(button => {
+        button.addEventListener('click', function() {
+            const ueId = this.dataset.id;
+            const klasseId = {{ klasse.id }};
+            const modal = document.querySelector('#editUeModal');
+            const form = modal.querySelector('#editUeForm');
+            
+            form.action = `/klassenbuch/${klasseId}/unterricht_bearbeiten/${ueId}`;
+            modal.querySelector('#editUeId').value = ueId;
+            modal.querySelector('#editDatum').value = this.dataset.datum;
+            modal.querySelector('#editStunden').value = this.dataset.stunden;
+            modal.querySelector('#editThema').value = this.dataset.thema;
+            modal.querySelector('#editInhalte').value = this.dataset.inhalte;
+        });
+    });
+});
+</script>
+{% endblock %}
+document.querySelectorAll('.edit-ue').forEach(button => {
+    button.addEventListener('click', function() {
+        const ueId = this.dataset.id; // This gets the ID of the specific Unterrichtseinheit
+        const klasseId = {{ klasse.id }}; // klasse.id is available from the main template context
+
+        const modal = document.querySelector('#editUeModal');
+        const form = modal.querySelector('#editUeForm'); // Get the form element within the modal
+
+        // Dynamically construct the full URL for the form's action.
+        // This URL must precisely match your Flask route: /klassenbuch/<int:klasse_id>/unterricht_bearbeiten/<int:ue_id>
+        form.action = `/klassenbuch/<span class="math-inline">\{klasseId\}/unterricht\_bearbeiten/</span>{ueId}`;
+
+        // Populate other modal fields (ensure these lines are present and correct)
+        modal.querySelector('#editUeId').value = ueId;
+        modal.querySelector('#editDatum').value = this.dataset.datum;
+        modal.querySelector('#editStunden').value = this.dataset.stunden;
+        modal.querySelector('#editThema').value = this.dataset.thema;
+        modal.querySelector('#editInhalte').value = this.dataset.inhalte;
+        // ... (add other fields for population if you have them)
+    });
+});
+document.querySelectorAll('.edit-schueler').forEach(button => {
+    button.addEventListener('click', function() {
+        const modal = document.querySelector('#editSchuelerModal');
+        modal.querySelector('#editSchuelerId').value = this.dataset.id;
+        modal.querySelector('#editName').value = this.dataset.name;
+        modal.querySelector('#editNachname').value = this.dataset.nachname;
+        modal.querySelector('#editGeburtsdatum').value = this.dataset.geburtsdatum;
+        modal.querySelector('#editGeschlecht').value = this.dataset.geschlecht;
+    });
+});
+
+
+</script>
+{% endblock %}

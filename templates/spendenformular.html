@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Spendenformular{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        background-color: #fff;
+    }
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h2>Spendenquittung erstellen</h2>
+            <p>Für Transaktion ID: {{ transaction.id }}</p>
+        </div>
+        <form method="POST" action="{{ url_for('spendenformular', transaction_id=transaction.id) }}">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name des Spenders</label>
+                <input type="text" class="form-control" id="name" name="name" required value="{{ transaction.description.replace('Spende von ', '').split(' für ')[0] if 'Spende von' in transaction.description else '' }}">
+            </div>
+            <div class="mb-3">
+                <label for="betrag" class="form-label">Betrag (€)</label>
+                <input type="number" step="0.01" class="form-control" id="betrag" name="betrag" required value="{{ '%.2f'|format(transaction.amount) }}">
+            </div>
+            <div class="mb-3">
+                <label for="zweck" class="form-label">Spendenzweck</label>
+                <input type="text" class="form-control" id="zweck" name="zweck" required value="{{ transaction.description.split(' für ')[1] if 'Spende von' in transaction.description and ' für ' in transaction.description else '' }}">
+            </div>
+            <div class="mb-3">
+                <label for="cost_center_id" class="form-label">Zugehörige Kostenstelle</label>
+                <select class="form-select" id="cost_center_id" name="cost_center_id">
+                    <option value="">Bitte auswählen</option>
+                    {% for cc in cost_centers %}
+                    <option value="{{ cc.id }}" {% if transaction.cost_center_id == cc.id %}selected{% endif %}>{{ cc.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Spendenquittung generieren</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#cost_center_id').select2({
+            placeholder: "Kostenstelle auswählen",
+            allowClear: true
+        });
+    });
+</script>
+{% endblock %}
