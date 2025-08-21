@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if subject %}Fach bearbeiten{% else %}Neues Fach{% endif %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-info">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('professional_classbook') }}">
+                <i class="fas fa-graduation-cap me-2"></i>Professionelles Klassenbuch
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('subjects_list') }}">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück zur Liste
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-{% if subject %}edit{% else %}plus{% endif %} me-2"></i>
+                            {% if subject %}Fach bearbeiten{% else %}Neues Fach{% endif %}
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" novalidate>
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="name" class="form-label">Fachname <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{ subject.name if subject else '' }}" required>
+                                    <div class="invalid-feedback">Bitte geben Sie einen Fachnamen ein.</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="short_name" class="form-label">Kürzel <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="short_name" name="short_name" 
+                                           value="{{ subject.short_name if subject else '' }}" maxlength="10" required>
+                                    <div class="form-text">Max. 10 Zeichen</div>
+                                    <div class="invalid-feedback">Bitte geben Sie ein Kürzel ein.</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="color" class="form-label">Farbe</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-palette"></i></span>
+                                        <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                               value="{{ subject.color if subject else '#007bff' }}" title="Fachfarbe wählen">
+                                    </div>
+                                    <div class="form-text">Diese Farbe wird in Stundenplänen und Übersichten verwendet</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Farbvorschau</label>
+                                    <div class="border rounded p-3 text-center text-white" id="color-preview" 
+                                         style="background-color: {{ subject.color if subject else '#007bff' }};">
+                                        <strong id="preview-name">{{ subject.name if subject else 'Fachname' }}</strong>
+                                        <br>
+                                        <span id="preview-short">{{ subject.short_name if subject else 'Kürzel' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Beschreibung</label>
+                                <textarea class="form-control" id="description" name="description" rows="3">{{ subject.description if subject else '' }}</textarea>
+                                <div class="form-text">Optionale Beschreibung des Fachs</div>
+                            </div>
+
+                            <hr>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('subjects_list') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Abbrechen
+                                </a>
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if subject %}Aktualisieren{% else %}Erstellen{% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {% if subject %}
+                <!-- Zusätzliche Informationen für bestehende Fächer -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Zusätzliche Informationen</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Erstellt am:</strong><br>
+                                <span class="text-muted">{{ subject.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Zugewiesene Lehrer:</strong><br>
+                                {% if subject.teacher_subjects %}
+                                    {% for ts in subject.teacher_subjects %}
+                                        <span class="badge bg-success me-1">{{ ts.teacher.full_name }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">Keine Lehrer zugeordnet</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body">
+                                        <h5>{{ subject.lessons.count() }}</h5>
+                                        <p class="mb-0">Unterrichtsstunden</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <h5>{{ subject.grades.count() }}</h5>
+                                        <p class="mb-0">Bewertungen</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body">
+                                        <h5>{{ subject.teacher_subjects.count() }}</h5>
+                                        <p class="mb-0">Zugewiesene Lehrer</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByTagName('form');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Live preview updates
+        document.getElementById('name').addEventListener('input', function() {
+            document.getElementById('preview-name').textContent = this.value || 'Fachname';
+        });
+
+        document.getElementById('short_name').addEventListener('input', function() {
+            document.getElementById('preview-short').textContent = this.value || 'Kürzel';
+        });
+
+        document.getElementById('color').addEventListener('input', function() {
+            document.getElementById('color-preview').style.backgroundColor = this.value;
+        });
+    </script>
+</body>
+</html>

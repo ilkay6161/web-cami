@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if class_room %}Klasse bearbeiten{% else %}Neue Klasse{% endif %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('professional_classbook') }}">
+                <i class="fas fa-graduation-cap me-2"></i>Professionelles Klassenbuch
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('professional_classes') }}">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück zur Liste
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-{% if class_room %}edit{% else %}plus{% endif %} me-2"></i>
+                            {% if class_room %}Klasse bearbeiten{% else %}Neue Klasse{% endif %}
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" novalidate>
+                            <!-- Grundinformationen -->
+                            <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Grundinformationen</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">Klassenname <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{ class_room.name if class_room else '' }}" required>
+                                    <div class="form-text">z.B. 5a, 10B, Abitur2024</div>
+                                    <div class="invalid-feedback">Bitte geben Sie einen Klassennamen ein.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="school_year" class="form-label">Schuljahr <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="school_year" name="school_year" 
+                                           value="{{ class_room.school_year if class_room else '' }}" 
+                                           placeholder="2023/2024" required>
+                                    <div class="form-text">Format: JJJJ/JJJJ</div>
+                                    <div class="invalid-feedback">Bitte geben Sie ein Schuljahr ein.</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="grade_level" class="form-label">Klassenstufe</label>
+                                    <select class="form-select" id="grade_level" name="grade_level">
+                                        <option value="">Bitte wählen...</option>
+                                        {% for i in range(1, 14) %}
+                                        <option value="{{ i }}" {% if class_room and class_room.grade_level == i %}selected{% endif %}>
+                                            {{ i }}. Klasse
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="section" class="form-label">Sektion/Zug</label>
+                                    <input type="text" class="form-control" id="section" name="section" 
+                                           value="{{ class_room.section if class_room else '' }}" 
+                                           placeholder="a, b, c, ..." maxlength="5">
+                                    <div class="form-text">Klassenbezeichnung (optional)</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="room_number" class="form-label">Klassenraum</label>
+                                    <input type="text" class="form-control" id="room_number" name="room_number" 
+                                           value="{{ class_room.room_number if class_room else '' }}" 
+                                           placeholder="z.B. 201, A-15">
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <!-- Lehrer und Kapazität -->
+                            <h5 class="mb-3"><i class="fas fa-users me-2"></i>Lehrer und Kapazität</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="class_teacher_id" class="form-label">Klassenlehrer</label>
+                                    <select class="form-select" id="class_teacher_id" name="class_teacher_id">
+                                        <option value="">Bitte wählen...</option>
+                                        {% for teacher in teachers %}
+                                        <option value="{{ teacher.id }}" 
+                                                {% if class_room and class_room.class_teacher_id == teacher.id %}selected{% endif %}>
+                                            {{ teacher.full_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Verantwortlicher Klassenlehrer</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="max_students" class="form-label">Maximale Schülerzahl</label>
+                                    <input type="number" class="form-control" id="max_students" name="max_students" 
+                                           value="{{ class_room.max_students if class_room else 30 }}" 
+                                           min="1" max="50">
+                                    <div class="form-text">Standard: 30 Schüler</div>
+                                </div>
+                            </div>
+
+                            {% if class_room %}
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                               {% if class_room.is_active %}checked{% endif %}>
+                                        <label class="form-check-label" for="is_active">
+                                            Aktiv
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Inaktive Klassen werden in Listen ausgeblendet</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <hr>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('professional_classes') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Abbrechen
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if class_room %}Aktualisieren{% else %}Erstellen{% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {% if class_room %}
+                <!-- Zusätzliche Informationen für bestehende Klassen -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Zusätzliche Informationen</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Erstellt am:</strong><br>
+                                <span class="text-muted">{{ class_room.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Aktuelle Schülerzahl:</strong><br>
+                                <span class="text-muted">{{ class_room.students.count() }} / {{ class_room.max_students }}</span>
+                                {% if class_room.students.count() > 0 %}
+                                <div class="progress mt-1" style="height: 5px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ (class_room.students.count() / class_room.max_students * 100)|round }}%"></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body">
+                                        <h5>{{ class_room.students.count() }}</h5>
+                                        <p class="mb-0">Schüler</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <h5>{{ class_room.lessons.count() }}</h5>
+                                        <p class="mb-0">Unterrichtsstunden</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body">
+                                        <h5>{{ class_room.schedule_entries.count() }}</h5>
+                                        <p class="mb-0">Stundenplan-Einträge</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schnellzugriff -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-rocket me-2"></i>Schnellzugriff</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{{ url_for('class_schedule', class_id=class_room.id) }}" class="btn btn-warning">
+                                <i class="fas fa-calendar me-2"></i>Stundenplan verwalten
+                            </a>
+                            <a href="{{ url_for('class_grades', class_id=class_room.id) }}" class="btn btn-success">
+                                <i class="fas fa-chart-line me-2"></i>Noten verwalten
+                            </a>
+                            <a href="#" class="btn btn-info">
+                                <i class="fas fa-user-plus me-2"></i>Schüler hinzufügen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByTagName('form');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Auto-generate class name suggestion
+        document.getElementById('grade_level').addEventListener('change', function() {
+            const section = document.getElementById('section').value || 'a';
+            if (this.value && !document.getElementById('name').value) {
+                document.getElementById('name').value = this.value + section;
+            }
+        });
+
+        document.getElementById('section').addEventListener('input', function() {
+            const gradeLevel = document.getElementById('grade_level').value;
+            if (gradeLevel && this.value) {
+                const currentName = document.getElementById('name').value;
+                if (!currentName || currentName === gradeLevel + (this.value.slice(0, -1) || 'a')) {
+                    document.getElementById('name').value = gradeLevel + this.value;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

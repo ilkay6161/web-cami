@@ -33,18 +33,14 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_PATH
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Datenbank-Modelle
-class BlogPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(150), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    image = db.Column(db.String(200))
-    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+# Import der erweiterten Modelle aus models.py
+from models import (
+    Subject, Teacher, TeacherSubject, TimeSlot, ScheduleEntry, 
+    ClassRoom, Student, Lesson, Attendance, GradeType, Grade, AbsenceReport,
+    User, BlogPost, Page, AdminMessage, Event
+)
 
-    @property
-    def date(self):
-        return self.timestamp
-
+# Zusätzliche Modelle die nur in app.py existieren
 class Kommentar(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     blog_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'), nullable=False)
@@ -86,52 +82,20 @@ class AktuellesKommentar(db.Model):
     text = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-class AdminMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender_name = db.Column(db.String(100), nullable=False)
-    sender_email = db.Column(db.String(150), nullable=False)
-    subject = db.Column(db.String(200), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    received_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    is_read = db.Column(db.Boolean, default=False)
-    admin_response = db.Column(db.Text)
-    response_date = db.Column(db.DateTime)
-
-class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    event_date = db.Column(db.DateTime, nullable=False)
-    event_time = db.Column(db.String(20))
-    location = db.Column(db.String(200))
-    is_recurring = db.Column(db.Boolean, default=False)
-    recurrence_type = db.Column(db.String(50))
-    is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-
-    @property
-    def is_past(self):
-        return self.event_date < datetime.datetime.utcnow()
-
-
 class CostCenter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    # Add this line for the 'code' column
     code = db.Column(db.String(50), unique=True, nullable=False)
-    # Define relationships if you have them, e.g., to Process and Transaction
     processes = db.relationship('Process', backref='cost_center', lazy=True, cascade='all, delete-orphan')
     transactions = db.relationship('Transaction', backref='cost_center', lazy=True)
 
     def __repr__(self):
         return f"<CostCenter {self.code} - {self.name}>"
 
-# Ensure Process and Transaction models are also defined below CostCenter if they refer to it
 class Process(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    code = db.Column(db.String(50), unique=True, nullable=False) # Make sure 'code' is also here for Process
+    code = db.Column(db.String(50), unique=True, nullable=False)
     cost_center_id = db.Column(db.Integer, db.ForeignKey('cost_center.id'), nullable=False)
     transactions = db.relationship('Transaction', backref='process', lazy=True)
 
@@ -142,21 +106,19 @@ class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255), nullable=False)
     amount = db.Column(db.Float)
-    type = db.Column(db.String(50), nullable=False) # 'Einnahme', 'Ausgabe', 'note'
+    type = db.Column(db.String(50), nullable=False)
     category = db.Column(db.String(100))
     date = db.Column(db.Date, nullable=False)
     cost_center_id = db.Column(db.Integer, db.ForeignKey('cost_center.id'), nullable=True)
     process_id = db.Column(db.Integer, db.ForeignKey('process.id'), nullable=True)
     document_filename = db.Column(db.String(255), nullable=True)
-    # Add other fields if you have them, like 'is_approved', 'accounting_circle'
     is_approved = db.Column(db.Boolean, default=False)
     accounting_circle = db.Column(db.String(100), default='Hauptbuch')
-
 
     def __repr__(self):
         return f"<Transaction {self.description}>"
 
-# MODELS
+# Legacy Klassenbuch-Modelle für Kompatibilität
 class Klasse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -181,6 +143,7 @@ class Unterrichtseinheit(db.Model):
     bemerkung = db.Column(db.Text)
     klasse_id = db.Column(db.Integer, db.ForeignKey('klasse.id'), nullable=False)
 
+# Anwesenheit wird durch das neue Attendance-Modell ersetzt, aber für Kompatibilität beibehalten
 class Anwesenheit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     schueler_id = db.Column(db.Integer, db.ForeignKey('schueler.id'), nullable=False)
@@ -2234,10 +2197,380 @@ def statistik2(klasse_id):
     )
 
 
-# Datenbank initialisieren
-@app.before_first_request
-def create_tables():
-    db.create_all()
+# ============ PROFESSIONELLE KLASSENBUCH ROUTES ============
+
+# Hauptmenü für professionelle Funktionen
+@app.route("/professional_classbook")
+def professional_classbook():
+    """Hauptmenü für das professionelle Klassenbuch"""
+    classes = ClassRoom.query.filter_by(is_active=True).all()
+    teachers = Teacher.query.filter_by(is_active=True).all()
+    subjects = Subject.query.all()
+    return render_template("professional_classbook.html", 
+                         classes=classes, teachers=teachers, subjects=subjects)
+
+# ============ LEHRER-VERWALTUNG ============
+@app.route("/teachers")
+def teachers_list():
+    """Liste aller Lehrer"""
+    teachers = Teacher.query.filter_by(is_active=True).all()
+    return render_template("teachers_list.html", teachers=teachers)
+
+@app.route("/teachers/add", methods=['GET', 'POST'])
+def add_teacher():
+    """Neuen Lehrer hinzufügen"""
+    if request.method == 'POST':
+        teacher = Teacher(
+            first_name=request.form['first_name'],
+            last_name=request.form['last_name'],
+            email=request.form.get('email'),
+            phone=request.form.get('phone'),
+            employee_id=request.form.get('employee_id'),
+            hire_date=datetime.datetime.strptime(request.form['hire_date'], '%Y-%m-%d').date() if request.form.get('hire_date') else None
+        )
+        db.session.add(teacher)
+        db.session.commit()
+        flash('Lehrer erfolgreich hinzugefügt!', 'success')
+        return redirect(url_for('teachers_list'))
+    return render_template("teacher_form.html", teacher=None)
+
+@app.route("/teachers/<int:teacher_id>/edit", methods=['GET', 'POST'])
+def edit_teacher(teacher_id):
+    """Lehrer bearbeiten"""
+    teacher = Teacher.query.get_or_404(teacher_id)
+    if request.method == 'POST':
+        teacher.first_name = request.form['first_name']
+        teacher.last_name = request.form['last_name']
+        teacher.email = request.form.get('email')
+        teacher.phone = request.form.get('phone')
+        teacher.employee_id = request.form.get('employee_id')
+        if request.form.get('hire_date'):
+            teacher.hire_date = datetime.datetime.strptime(request.form['hire_date'], '%Y-%m-%d').date()
+        db.session.commit()
+        flash('Lehrer erfolgreich aktualisiert!', 'success')
+        return redirect(url_for('teachers_list'))
+    return render_template("teacher_form.html", teacher=teacher)
+
+# ============ FÄCHER-VERWALTUNG ============
+@app.route("/subjects")
+def subjects_list():
+    """Liste aller Fächer"""
+    subjects = Subject.query.all()
+    return render_template("subjects_list.html", subjects=subjects)
+
+@app.route("/subjects/add", methods=['GET', 'POST'])
+def add_subject():
+    """Neues Fach hinzufügen"""
+    if request.method == 'POST':
+        subject = Subject(
+            name=request.form['name'],
+            short_name=request.form['short_name'],
+            color=request.form.get('color', '#007bff'),
+            description=request.form.get('description')
+        )
+        db.session.add(subject)
+        db.session.commit()
+        flash('Fach erfolgreich hinzugefügt!', 'success')
+        return redirect(url_for('subjects_list'))
+    return render_template("subject_form.html", subject=None)
+
+# ============ KLASSEN-VERWALTUNG (ERWEITERT) ============
+@app.route("/professional_classes")
+def professional_classes():
+    """Erweiterte Klassenliste"""
+    classes = ClassRoom.query.filter_by(is_active=True).all()
+    return render_template("professional_classes.html", classes=classes)
+
+@app.route("/professional_classes/add", methods=['GET', 'POST'])
+def add_professional_class():
+    """Neue Klasse mit erweiterten Funktionen hinzufügen"""
+    teachers = Teacher.query.filter_by(is_active=True).all()
+    if request.method == 'POST':
+        class_room = ClassRoom(
+            name=request.form['name'],
+            school_year=request.form['school_year'],
+            grade_level=int(request.form.get('grade_level', 0)) or None,
+            section=request.form.get('section'),
+            class_teacher_id=int(request.form['class_teacher_id']) if request.form.get('class_teacher_id') else None,
+            max_students=int(request.form.get('max_students', 30)),
+            room_number=request.form.get('room_number')
+        )
+        db.session.add(class_room)
+        db.session.commit()
+        flash('Klasse erfolgreich erstellt!', 'success')
+        return redirect(url_for('professional_classes'))
+    return render_template("professional_class_form.html", class_room=None, teachers=teachers)
+
+# ============ STUNDENPLAN-VERWALTUNG ============
+@app.route("/schedule")
+def schedule_overview():
+    """Stundenplan-Übersicht"""
+    classes = ClassRoom.query.filter_by(is_active=True).all()
+    return render_template("schedule_overview.html", classes=classes)
+
+@app.route("/schedule/class/<int:class_id>")
+def class_schedule(class_id):
+    """Stundenplan für eine Klasse"""
+    class_room = ClassRoom.query.get_or_404(class_id)
+    
+    # Stundenplan-Einträge für die Klasse abrufen
+    schedule_entries = ScheduleEntry.query.filter_by(
+        class_id=class_id, 
+        is_active=True
+    ).join(TimeSlot).order_by(
+        ScheduleEntry.day_of_week, 
+        TimeSlot.period_number
+    ).all()
+    
+    # Zeitslots abrufen
+    time_slots = TimeSlot.query.order_by(TimeSlot.period_number).all()
+    
+    # Stundenplan als Dictionary organisieren
+    schedule_dict = {}
+    for entry in schedule_entries:
+        day = entry.day_of_week
+        period = entry.time_slot.period_number
+        if day not in schedule_dict:
+            schedule_dict[day] = {}
+        schedule_dict[day][period] = entry
+    
+    days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag']
+    
+    return render_template("class_schedule.html", 
+                         class_room=class_room, 
+                         schedule_dict=schedule_dict,
+                         time_slots=time_slots,
+                         days=days)
+
+@app.route("/schedule/setup")
+def schedule_setup():
+    """Stundenplan-Einrichtung"""
+    time_slots = TimeSlot.query.order_by(TimeSlot.period_number).all()
+    return render_template("schedule_setup.html", time_slots=time_slots)
+
+@app.route("/schedule/time_slots/add", methods=['GET', 'POST'])
+def add_time_slot():
+    """Zeitslot hinzufügen"""
+    if request.method == 'POST':
+        time_slot = TimeSlot(
+            period_number=int(request.form['period_number']),
+            start_time=datetime.datetime.strptime(request.form['start_time'], '%H:%M').time(),
+            end_time=datetime.datetime.strptime(request.form['end_time'], '%H:%M').time(),
+            is_break=bool(request.form.get('is_break')),
+            break_duration=int(request.form.get('break_duration', 0))
+        )
+        db.session.add(time_slot)
+        db.session.commit()
+        flash('Zeitslot erfolgreich hinzugefügt!', 'success')
+        return redirect(url_for('schedule_setup'))
+    return render_template("time_slot_form.html", time_slot=None)
+
+# ============ NOTEN-VERWALTUNG ============
+@app.route("/grades")
+def grades_overview():
+    """Noten-Übersicht"""
+    classes = ClassRoom.query.filter_by(is_active=True).all()
+    subjects = Subject.query.all()
+    return render_template("grades_overview.html", classes=classes, subjects=subjects)
+
+@app.route("/grades/class/<int:class_id>")
+def class_grades(class_id):
+    """Noten für eine Klasse"""
+    class_room = ClassRoom.query.get_or_404(class_id)
+    students = Student.query.filter_by(class_id=class_id, is_active=True).all()
+    subjects = Subject.query.all()
+    grade_types = GradeType.query.filter_by(is_active=True).all()
+    
+    return render_template("class_grades.html", 
+                         class_room=class_room, 
+                         students=students,
+                         subjects=subjects,
+                         grade_types=grade_types)
+
+@app.route("/grades/student/<int:student_id>")
+def student_grades(student_id):
+    """Alle Noten eines Schülers"""
+    student = Student.query.get_or_404(student_id)
+    grades = Grade.query.filter_by(student_id=student_id).order_by(Grade.exam_date.desc()).all()
+    
+    # Noten nach Fächern gruppieren
+    grades_by_subject = {}
+    for grade in grades:
+        subject_name = grade.subject.name
+        if subject_name not in grades_by_subject:
+            grades_by_subject[subject_name] = []
+        grades_by_subject[subject_name].append(grade)
+    
+    return render_template("student_grades.html", 
+                         student=student, 
+                         grades_by_subject=grades_by_subject)
+
+@app.route("/grades/add", methods=['GET', 'POST'])
+def add_grade():
+    """Note hinzufügen"""
+    if request.method == 'POST':
+        grade = Grade(
+            student_id=int(request.form['student_id']),
+            subject_id=int(request.form['subject_id']),
+            teacher_id=int(request.form['teacher_id']),
+            grade_type_id=int(request.form['grade_type_id']),
+            points=float(request.form.get('points', 0)) if request.form.get('points') else None,
+            max_points=float(request.form.get('max_points', 0)) if request.form.get('max_points') else None,
+            grade_value=float(request.form.get('grade_value', 0)) if request.form.get('grade_value') else None,
+            percentage=float(request.form.get('percentage', 0)) if request.form.get('percentage') else None,
+            exam_date=datetime.datetime.strptime(request.form['exam_date'], '%Y-%m-%d').date(),
+            title=request.form['title'],
+            description=request.form.get('description'),
+            comments=request.form.get('comments'),
+            weight=float(request.form.get('weight', 1.0)),
+            is_published=bool(request.form.get('is_published'))
+        )
+        db.session.add(grade)
+        db.session.commit()
+        flash('Note erfolgreich hinzugefügt!', 'success')
+        return redirect(url_for('class_grades', class_id=grade.student.class_id))
+    
+    # GET request - Form anzeigen
+    students = Student.query.filter_by(is_active=True).all()
+    subjects = Subject.query.all()
+    teachers = Teacher.query.filter_by(is_active=True).all()
+    grade_types = GradeType.query.filter_by(is_active=True).all()
+    
+    return render_template("grade_form.html", 
+                         grade=None,
+                         students=students,
+                         subjects=subjects,
+                         teachers=teachers,
+                         grade_types=grade_types)
+
+# ============ ANWESENHEIT (ERWEITERT) ============
+@app.route("/attendance/class/<int:class_id>/date/<date>")
+def class_attendance(class_id, date):
+    """Anwesenheit für eine Klasse an einem bestimmten Tag"""
+    class_room = ClassRoom.query.get_or_404(class_id)
+    attendance_date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+    
+    # Stunden für diesen Tag abrufen
+    lessons = Lesson.query.filter_by(
+        class_id=class_id,
+        date=attendance_date
+    ).order_by(Lesson.period).all()
+    
+    students = Student.query.filter_by(class_id=class_id, is_active=True).all()
+    
+    return render_template("class_attendance.html",
+                         class_room=class_room,
+                         date=attendance_date,
+                         lessons=lessons,
+                         students=students)
+
+# ============ BERICHTE ============
+@app.route("/reports")
+def reports_overview():
+    """Berichte-Übersicht"""
+    return render_template("reports_overview.html")
+
+@app.route("/reports/class/<int:class_id>/grades")
+def class_grade_report(class_id):
+    """Notenbericht für eine Klasse"""
+    class_room = ClassRoom.query.get_or_404(class_id)
+    students = Student.query.filter_by(class_id=class_id, is_active=True).all()
+    
+    # Noten für alle Schüler der Klasse
+    grades_data = []
+    for student in students:
+        student_grades = Grade.query.filter_by(student_id=student.id).all()
+        grades_by_subject = {}
+        for grade in student_grades:
+            subject = grade.subject.name
+            if subject not in grades_by_subject:
+                grades_by_subject[subject] = []
+            grades_by_subject[subject].append(grade)
+        
+        # Durchschnitt pro Fach berechnen
+        subject_averages = {}
+        for subject, subject_grades in grades_by_subject.items():
+            if subject_grades:
+                total_weighted_grade = sum(g.grade_value * g.weight for g in subject_grades if g.grade_value)
+                total_weight = sum(g.weight for g in subject_grades if g.grade_value)
+                if total_weight > 0:
+                    subject_averages[subject] = round(total_weighted_grade / total_weight, 2)
+        
+        grades_data.append({
+            'student': student,
+            'grades_by_subject': grades_by_subject,
+            'subject_averages': subject_averages
+        })
+    
+    return render_template("class_grade_report.html", 
+                         class_room=class_room,
+                         grades_data=grades_data)
+
+
+# Datenbank-Tabellen werden bereits beim Start erstellt
+
+# Beispieldaten erstellen
+@app.route("/setup_sample_data")
+def setup_sample_data():
+    """Erstellt Beispieldaten für das professionelle Klassenbuch"""
+    
+    # Bewertungstypen erstellen
+    if not GradeType.query.first():
+        grade_types = [
+            GradeType(name="Klassenarbeit", short_name="KA", weight=3.0, color="#dc3545"),
+            GradeType(name="Test", short_name="T", weight=2.0, color="#fd7e14"),
+            GradeType(name="Mündliche Mitarbeit", short_name="M", weight=1.0, color="#28a745"),
+            GradeType(name="Hausaufgabe", short_name="HA", weight=0.5, color="#17a2b8"),
+            GradeType(name="Referat", short_name="R", weight=2.0, color="#6f42c1")
+        ]
+        for gt in grade_types:
+            db.session.add(gt)
+    
+    # Fächer erstellen
+    if not Subject.query.first():
+        subjects = [
+            Subject(name="Mathematik", short_name="M", color="#007bff"),
+            Subject(name="Deutsch", short_name="D", color="#28a745"),
+            Subject(name="Englisch", short_name="E", color="#dc3545"),
+            Subject(name="Geschichte", short_name="G", color="#fd7e14"),
+            Subject(name="Biologie", short_name="Bio", color="#20c997"),
+            Subject(name="Chemie", short_name="Ch", color="#6f42c1"),
+            Subject(name="Physik", short_name="Ph", color="#e83e8c"),
+            Subject(name="Sport", short_name="Sp", color="#ffc107")
+        ]
+        for subject in subjects:
+            db.session.add(subject)
+    
+    # Zeitslots erstellen
+    if not TimeSlot.query.first():
+        time_slots = [
+            TimeSlot(period_number=1, start_time=datetime.time(8, 0), end_time=datetime.time(8, 45)),
+            TimeSlot(period_number=2, start_time=datetime.time(8, 50), end_time=datetime.time(9, 35)),
+            TimeSlot(period_number=0, start_time=datetime.time(9, 35), end_time=datetime.time(9, 55), is_break=True, break_duration=20),
+            TimeSlot(period_number=3, start_time=datetime.time(9, 55), end_time=datetime.time(10, 40)),
+            TimeSlot(period_number=4, start_time=datetime.time(10, 45), end_time=datetime.time(11, 30)),
+            TimeSlot(period_number=0, start_time=datetime.time(11, 30), end_time=datetime.time(11, 45), is_break=True, break_duration=15),
+            TimeSlot(period_number=5, start_time=datetime.time(11, 45), end_time=datetime.time(12, 30)),
+            TimeSlot(period_number=6, start_time=datetime.time(12, 35), end_time=datetime.time(13, 20))
+        ]
+        for slot in time_slots:
+            db.session.add(slot)
+    
+    # Beispiel-Lehrer erstellen
+    if not Teacher.query.first():
+        teachers = [
+            Teacher(first_name="Maria", last_name="Schmidt", email="m.schmidt@schule.de", employee_id="T001"),
+            Teacher(first_name="Thomas", last_name="Müller", email="t.mueller@schule.de", employee_id="T002"),
+            Teacher(first_name="Sarah", last_name="Weber", email="s.weber@schule.de", employee_id="T003"),
+            Teacher(first_name="Michael", last_name="Fischer", email="m.fischer@schule.de", employee_id="T004")
+        ]
+        for teacher in teachers:
+            db.session.add(teacher)
+    
+    db.session.commit()
+    flash('Beispieldaten erfolgreich erstellt!', 'success')
+    return redirect(url_for('professional_classbook'))
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

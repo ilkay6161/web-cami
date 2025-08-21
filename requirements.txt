@@ -1,12 +1,12 @@
 Flask>=2.3.0
 Flask-SQLAlchemy>=3.0.0
+Flask-Login>=0.6.0
+Flask-Migrate>=4.0.0
+Flask-Moment>=1.0.0
 Werkzeug>=2.3.0
 matplotlib>=3.7.0
 seaborn>=0.12.0
 pandas>=1.5.0
-flask
-flask-sqlalchemy
 gunicorn
-matplotlib
-pandas
-seaborn
+WTForms>=3.0.0
+Flask-WTF>=1.1.0
