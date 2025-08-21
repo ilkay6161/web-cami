@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, a
 import datetime
 import json
 import os
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -11,8 +10,8 @@ from io import BytesIO
 from collections import defaultdict
 from flask_moment import Moment
 from matplotlib.backends.backend_pdf import PdfPages
-from flask_migrate import Migrate
 from sqlalchemy import func
+import base64
 
 #from weasyprint import HTML, CSS
 # App erstellen
@@ -29,9 +28,9 @@ UPLOAD_PATH = os.path.join('static', 'Uploads')
 os.makedirs(UPLOAD_PATH, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_PATH
 
-# Datenbankinstanz initialisieren
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+# Datenbank initialisieren
+from database import db, init_db
+init_db(app)
 
 # Import der erweiterten Modelle aus models.py
 from models import (
@@ -170,9 +169,7 @@ def load_updates():
         data_storage = []
         save_updates()
 
-# Datenbank initialisieren
-with app.app_context():
-    db.create_all()
+# Datenbank wird bereits durch init_db() initialisiert
 
 load_updates()
 
