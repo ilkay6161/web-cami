@@ -2235,10 +2235,12 @@ def statistik2(klasse_id):
 
 
 # Datenbank initialisieren
-@app.before_first_request
 def create_tables():
-    db.create_all()
-if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+
+# Initialize database on startup
+create_tables()
+
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=3000)
